@@ -423,6 +423,7 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
     </div>
     <button class="btn btn-primary" id="btn-conectar" onclick="conectarGS()"><span aria-hidden="true">⚡</span> Conectar e carregar dados</button>
     <div id="cfg-status" style="font-size:12px;margin-top:10px;color:var(--color-text-secondary)"></div>
+    <button class="btn btn-sm" style="margin-top:8px;color:var(--color-text-danger)" onclick="desconectarGS()">✕ Desconectar e limpar URL salva</button>
     <div class="formula-box" style="margin-top:14px">
       <b>Como funciona:</b> ao conectar, o app busca todos os produtos e vendas da sua planilha e substitui os dados de demonstração. A partir daí, cadastrar produtos, repor estoque e registrar vendas grava direto na planilha.<br><br>
       <b>Estrutura esperada:</b><br>
@@ -648,6 +649,7 @@ async function conectarGS(){
     }));
 
     conectado=true;
+    localStorage.setItem('prata_gs_url', gsUrl);
     const pill=document.getElementById('gs-pill');
     pill.textContent='⬤ Conectado';pill.classList.add('ok');
     status.innerHTML=`<span style="color:var(--color-text-success)"><span aria-hidden="true">✓</span> ${produtos.length} produto(s) e ${vendas.length} venda(s) carregados.</span>`;
@@ -672,6 +674,16 @@ async function gsPost(payload){
     if(!json.ok)toast('t-dash','Planilha retornou erro: '+(json.error||'desconhecido'),false);
     return json;
   }catch(e){toast('t-dash','Erro de conexão com a planilha.',false);return null;}
+}
+function desconectarGS(){
+  localStorage.removeItem('prata_gs_url');
+  gsUrl='';
+  conectado=false;
+  document.getElementById('cfg-url').value='';
+  document.getElementById('cfg-status').textContent='URL removida. Conecte novamente.';
+  const pill=document.getElementById('gs-pill');
+  pill.textContent='⬤ Desconectado';pill.classList.remove('ok');
+  toast('t-dash','Desconectado do Google Sheets.',true);
 }
 async function syncAll(){
   if(!gsUrl){toast('t-dash','Conecte ao Google Sheets na aba Config primeiro.',false);goTab('config');return;}
@@ -1131,6 +1143,13 @@ function renderRelatorio(){
 
 // ================= INIT =================
 // renderDash() é chamado após a senha ser validada
+function initApp(){
+  const saved = localStorage.getItem('prata_gs_url');
+  if(saved){
+    gsUrl = saved;
+    document.getElementById('cfg-url').value = saved;
+  }
+}
 </script>
 
 <!-- ===================== TELA DE SENHA ===================== -->
@@ -1195,7 +1214,14 @@ function checkPass(){
   const v = document.getElementById('lock-input').value;
   if(v === APP_PASS){
     document.getElementById('lock-screen').classList.add('hidden');
-    renderDash();
+    initApp();
+    const saved = localStorage.getItem('prata_gs_url');
+    if(saved){
+      gsUrl = saved;
+      conectarGS().then(()=>{ if(!conectado) renderDash(); });
+    } else {
+      renderDash();
+    }
   } else {
     const err = document.getElementById('lock-error');
     err.classList.add('show');
