@@ -1130,7 +1130,83 @@ function renderRelatorio(){
 }
 
 // ================= INIT =================
-renderDash();
+// renderDash() é chamado após a senha ser validada
+</script>
+
+<!-- ===================== TELA DE SENHA ===================== -->
+<style>
+#lock-screen{
+  position:fixed;inset:0;z-index:999;
+  background:linear-gradient(135deg,#2b2e36 0%,#1a1c22 60%,#3a3f4b 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+#lock-screen.hidden{display:none}
+.lock-box{
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  border-radius:20px;padding:40px 32px;width:90%;max-width:340px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  backdrop-filter:blur(10px);
+}
+.lock-logo{font-size:48px;margin-bottom:4px}
+.lock-title{color:#f3f4f6;font-size:20px;font-weight:600;letter-spacing:.5px}
+.lock-sub{color:#9aa3b0;font-size:13px;text-align:center;line-height:1.5}
+.lock-input{
+  width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.08);color:#f3f4f6;font-size:14px;
+  outline:none;text-align:center;letter-spacing:2px;font-family:inherit;
+  transition:border-color .2s;
+}
+.lock-input:focus{border-color:#9aa3b0}
+.lock-input::placeholder{letter-spacing:0;color:#6b7280}
+.lock-btn{
+  width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#cfd5dd 0%,#9aa3b0 100%);
+  color:#2b2e36;font-size:14px;font-weight:700;letter-spacing:.5px;
+  transition:filter .2s;font-family:inherit;
+}
+.lock-btn:hover{filter:brightness(1.08)}
+.lock-error{
+  color:#e57373;font-size:12px;text-align:center;
+  display:none;animation:shake .3s ease;
+}
+.lock-error.show{display:block}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.lock-hint{color:#6b7280;font-size:11px;margin-top:4px}
+</style>
+
+<div id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-logo">◆</div>
+    <div class="lock-title">Prata — Controle</div>
+    <div class="lock-sub">Digite a senha para acessar o sistema</div>
+    <input class="lock-input" type="password" id="lock-input"
+      placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')checkPass()"
+      autocomplete="current-password">
+    <button class="lock-btn" onclick="checkPass()">Entrar</button>
+    <div class="lock-error" id="lock-error">Senha incorreta. Tente novamente.</div>
+    <div class="lock-hint"></div>
+  </div>
+</div>
+
+<script>
+const APP_PASS = 'Aurora@19/08';
+function checkPass(){
+  const v = document.getElementById('lock-input').value;
+  if(v === APP_PASS){
+    document.getElementById('lock-screen').classList.add('hidden');
+    renderDash();
+  } else {
+    const err = document.getElementById('lock-error');
+    err.classList.add('show');
+    document.getElementById('lock-input').value='';
+    document.getElementById('lock-input').focus();
+    setTimeout(()=>err.classList.remove('show'), 3000);
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('lock-input').focus();
+});
 </script>
 
 <!-- ===================== AGENTE FLUTUANTE ===================== -->
