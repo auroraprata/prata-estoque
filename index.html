@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prata — Controle de Estoque e Vendas</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+:root{
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#eef0f3;
+  --color-background-tertiary:#f4f5f7;
+  --color-background-success:#e8f0ee;
+  --color-background-warning:#f6f1e4;
+  --color-background-danger:#f6e9ea;
+  --color-text-primary:#2b2e36;
+  --color-text-secondary:#767c89;
+  --color-text-tertiary:#a7adb8;
+  --color-text-success:#3e7d6e;
+  --color-text-warning:#a3793a;
+  --color-text-danger:#a8454f;
+  --color-border-primary:#2b2e36;
+  --color-border-secondary:#d6dae1;
+  --color-border-tertiary:#e6e9ed;
+  --color-border-success:#cfe3de;
+  --color-border-warning:#ecdfc4;
+  --color-border-danger:#ecd6d8;
+  --border-radius-sm:8px;
+  --border-radius-md:12px;
+  --border-radius-lg:16px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+
+  --silver-gradient:linear-gradient(135deg,#cfd5dd 0%,#9aa3b0 45%,#e8ecf1 100%);
+  --silver-gradient-dark:linear-gradient(135deg,#3a3f4b 0%,#23262e 60%,#454b59 100%);
+  --shadow-soft:0 2px 10px rgba(43,46,54,0.06);
+  --shadow-card:0 4px 18px rgba(43,46,54,0.08);
+}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body{margin:0;background:var(--color-background-tertiary)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary);font-weight:400}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:none;background:var(--silver-gradient-dark);color:#f3f4f6;box-shadow:0 2px 12px rgba(0,0,0,0.15)}
+.logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600;letter-spacing:.5px;color:#f3f4f6}
+.logo i{background:var(--silver-gradient);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px!important}
+.gs-pill{font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,0.08);color:#e3a8ad;cursor:pointer;border:1px solid rgba(255,255,255,0.12);transition:all .2s}
+.gs-pill.ok{background:rgba(255,255,255,0.08);color:#a9d8cb;border-color:rgba(255,255,255,0.12)}
+.topbar .btn{background:rgba(255,255,255,0.06);color:#f3f4f6;border-color:rgba(255,255,255,0.15)}
+.topbar .btn:hover{background:rgba(255,255,255,0.12)}
+.nav{display:flex;padding:0 14px;border-bottom:0.5px solid var(--color-border-tertiary);overflow-x:auto;background:var(--color-background-primary);box-shadow:var(--shadow-soft)}
+.nb{padding:11px 13px;font-size:12.5px;border:none;background:transparent;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap;font-weight:500;letter-spacing:.2px;transition:color .15s}
+.nb.on{color:var(--color-text-primary);border-bottom-color:#9aa3b0;font-weight:600}
+.nb:hover{color:var(--color-text-primary)}
+.content{padding:16px}
+.sc{display:none}.sc.on{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.metrics3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mc{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:13px 15px;box-shadow:var(--shadow-soft);transition:transform .15s,box-shadow .15s}
+.mc:hover{transform:translateY(-1px);box-shadow:var(--shadow-card)}
+.ml{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;display:flex;align-items:center;gap:4px;font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.mv{font-size:20px;font-weight:600;letter-spacing:.2px}
+.ms{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.mc.highlight{background:linear-gradient(135deg,#eef1f4 0%,#e3e7ec 100%);border-color:var(--color-border-secondary)}
+.mc.highlight .ml,.mc.highlight .ms{color:var(--color-text-secondary)}
+.mc.highlight .mv{color:var(--color-text-primary)}
+.mc.warn{background:var(--color-background-warning)}
+.mc.warn .ml,.mc.warn .mv,.mc.warn .ms{color:var(--color-text-warning)}
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:99px;margin-left:6px}
+.delta-up{background:var(--color-background-success);color:var(--color-text-success)}
+.delta-down{background:var(--color-background-danger);color:var(--color-text-danger)}
+.delta-flat{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.st{font-size:13.5px;font-weight:600;letter-spacing:.2px}
+.btn{padding:7px 13px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);cursor:pointer;font-size:12px;color:var(--color-text-primary);display:inline-flex;align-items:center;gap:5px;font-weight:500;transition:all .15s}
+.btn:hover{background:var(--color-background-secondary);border-color:var(--color-text-secondary)}
+.btn-primary{background:var(--silver-gradient-dark);color:#f3f4f6;border-color:transparent;box-shadow:var(--shadow-soft)}
+.btn-primary:hover{filter:brightness(1.15)}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn[disabled]{opacity:.5;cursor:default}
+.tw{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:auto;box-shadow:var(--shadow-soft)}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{padding:9px 11px;text-align:left;font-weight:600;font-size:10.5px;color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-tertiary);background:var(--color-background-secondary);white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
+td{padding:9px 11px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--color-background-secondary)}
+.alert{padding:10px 14px;border-radius:var(--border-radius-md);font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;border:1px solid transparent}
+.aw{background:var(--color-background-warning);color:var(--color-text-warning);border-color:var(--color-border-warning)}
+.as{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.ad{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.toast-box{padding:10px 14px;border-radius:var(--border-radius-md);font-size:12px;font-weight:600;display:none;align-items:center;gap:8px;margin-bottom:10px}
+.bar-wrap{display:flex;align-items:flex-end;gap:10px;height:120px;padding:8px 4px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+.bar{width:100%;border-radius:6px 6px 2px 2px;min-height:2px;display:flex;align-items:flex-start;justify-content:center;background:linear-gradient(180deg,#dde1e6 0%,#b8bfc9 100%);transition:height .4s ease}
+.bar-val{font-size:9px;font-weight:600;padding-top:2px}
+.bar-label{font-size:10px;color:var(--color-text-secondary);text-align:center;font-weight:500}
+.section-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.panel-card{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;box-shadow:var(--shadow-soft)}
+.padbar{display:flex;gap:14px;align-items:center;background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:14px;font-size:12px;flex-wrap:wrap;box-shadow:var(--shadow-soft)}
+.padbar input{width:60px;padding:5px 7px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-sm);font-size:12px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+.field label{font-size:11px;color:var(--color-text-secondary);font-weight:500}
+.field input,.field select{padding:7px 9px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-sm);font-size:12px;width:100%;font-family:var(--font-sans);transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:#9aa3b0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.badge{font-size:10px;padding:2px 8px;border-radius:99px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-weight:500}
+.badge.custom{background:var(--color-background-warning);color:var(--color-text-warning)}
+.formula-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:11px 13px;font-size:11px;color:var(--color-text-secondary);line-height:1.7;margin-top:10px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(43,46,54,0.45);align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(2px)}
+.modal-bg.on{display:flex}
+.modal{background:var(--color-background-primary);border-radius:var(--border-radius-lg);padding:20px;width:90%;max-width:420px;max-height:85vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,0.18)}
+.modal-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.tabs2{display:flex;gap:4px;margin-bottom:12px;background:var(--color-background-secondary);padding:4px;border-radius:var(--border-radius-md);width:fit-content}
+.tab2{padding:6px 14px;font-size:12px;border:none;background:transparent;border-radius:var(--border-radius-sm);cursor:pointer;color:var(--color-text-secondary);font-weight:500;transition:all .15s}
+.tab2.on{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:600;box-shadow:var(--shadow-soft)}
+.progress-track{background:var(--color-background-secondary);border-radius:99px;height:10px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#9aa3b0,#cfd5dd);transition:width .4s}
+.dist-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:12px}
+.dist-label{width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.dist-bar{flex:1;background:var(--color-background-secondary);border-radius:99px;height:8px;overflow:hidden}
+.dist-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#b8bfc9,#7d8696)}
+.dist-val{width:70px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;font-weight:500}
+select.cat-filter{padding:6px 9px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-sm);font-size:12px;background:var(--color-background-primary);font-family:var(--font-sans)}
+input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-sm);font-size:12px;font-family:var(--font-sans)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width: 720px){
+  .content{padding:10px}
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .metrics3{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .section-row{grid-template-columns:1fr;gap:10px}
+  .grid2{grid-template-columns:1fr}
+  .mv{font-size:16px}
+  .ml{font-size:10px}
+  .ms{font-size:10px}
+  .st{font-size:12px}
+  table{table-layout:auto}
+  th,td{white-space:normal;font-size:11px;padding:6px 6px}
+  .nav{flex-wrap:nowrap}
+  .topbar{flex-wrap:wrap;gap:6px}
+  .padbar{flex-direction:column;align-items:flex-start;gap:8px}
+  .padbar select.cat-filter{margin-left:0!important;width:100%}
+  .dist-label{width:70px}
+  .bar-wrap{height:100px}
+}
+@media (max-width: 420px){
+  .metrics{grid-template-columns:1fr 1fr}
+  .metrics3{grid-template-columns:1fr}
+  .mv{font-size:15px}
+}
+</style>
+</head>
+<body>
+
+<h2 class="sr-only">App de controle de estoque, vendas, categorias e dashboard financeiro para loja de prata, conectado ao Google Sheets</h2>
+
+<div class="topbar">
+  <div class="logo"><span style="font-size:18px" aria-hidden="true">◆</span> Prata — Controle</div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="gs-pill" id="gs-pill" onclick="goTab('config')">⬤ Desconectado</span>
+    <button class="btn" id="btn-sync" onclick="syncAll()"><span aria-hidden="true">↻</span> Sincronizar</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nb on" data-tab="dashboard" onclick="goTab('dashboard')">Dashboard</button>
+  <button class="nb" data-tab="estoque" onclick="goTab('estoque')">Estoque</button>
+  <button class="nb" data-tab="entrada" onclick="goTab('entrada')">Entrada de Estoque</button>
+  <button class="nb" data-tab="vendas" onclick="goTab('vendas')">Vendas</button>
+  <button class="nb" data-tab="novavenda" onclick="goTab('novavenda')">Nova Venda</button>
+  <button class="nb" data-tab="relatorio" onclick="goTab('relatorio')">Relatório</button>
+  <button class="nb" data-tab="config" onclick="goTab('config')">Config</button>
+</nav>
+
+<div class="content">
+
+<!-- ===================== DASHBOARD ===================== -->
+<div class="sc on" id="sc-dashboard">
+  <div id="t-dash" class="toast-box"></div>
+  <div id="dash-demo-warning"></div>
+  <div class="metrics" id="dash-metrics"></div>
+
+  <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">📅</span> Resultado do mês</span></div>
+  <div class="metrics" id="mes-metrics" style="margin-bottom:18px"></div>
+
+  <div class="section-row">
+    <div class="panel-card">
+      <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">📆</span> Esta semana</span></div>
+      <div class="metrics3" id="semana-metrics"></div>
+    </div>
+    <div class="panel-card">
+      <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">🏆</span> Melhor mês registrado</span></div>
+      <div class="metrics3" id="melhor-metrics"></div>
+    </div>
+  </div>
+
+  <div class="section-row">
+    <div class="panel-card">
+      <div class="sh">
+        <span class="st"><span style="font-size:13px" aria-hidden="true">🎯</span> Meta do mês</span>
+        <span style="font-size:11px">R$ <input class="meta-input" type="number" id="meta-input" value="3000" oninput="renderDash()"></span>
+      </div>
+      <div id="meta-box"></div>
+    </div>
+    <div class="panel-card">
+      <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">↗</span> Previsão do mês</span></div>
+      <div id="previsao-box"></div>
+    </div>
+  </div>
+
+  <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">⚖</span> Margem real vs. padrão</span></div>
+  <div class="metrics3" id="margem-metrics" style="margin-bottom:18px"></div>
+
+  <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">📊</span> Faturamento — últimos 6 meses</span></div>
+  <div class="tw" style="margin-bottom:18px;padding:8px"><div class="bar-wrap" id="bar-chart"></div></div>
+
+  <div class="section-row">
+    <div>
+      <div class="sh">
+        <span class="st"><span style="font-size:13px" aria-hidden="true">🔥</span> Mais vendidos</span>
+        <select class="cat-filter" id="cat-filter-vendidos" onchange="renderDash()"></select>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>Produto</th><th style="width:55px">Qtd</th><th style="width:80px">Faturamento</th></tr></thead>
+        <tbody id="tb-mais-vendidos"></tbody>
+      </table></div>
+    </div>
+    <div>
+      <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">⏸</span> Produtos parados</span></div>
+      <div class="tw"><table>
+        <thead><tr><th>Produto</th><th style="width:60px">Qtd</th><th style="width:90px">Sem vender há</th></tr></thead>
+        <tbody id="tb-parados"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="section-row">
+    <div class="panel-card">
+      <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">🏷</span> Estoque por categoria</span></div>
+      <div id="dist-categoria"></div>
+    </div>
+    <div class="panel-card">
+      <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">🚚</span> Estoque por fornecedor</span></div>
+      <div id="dist-fornecedor"></div>
+    </div>
+  </div>
+
+  <div class="sh"><span class="st"><span style="font-size:13px" aria-hidden="true">📦</span> Capital parado em estoque</span></div>
+  <div class="metrics3" id="capital-metrics" style="margin-bottom:18px"></div>
+
+  <div class="section-row" style="margin-bottom:0">
+    <div>
+      <div class="sh"><span class="st">Últimas vendas</span></div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:80px">Data</th><th>Produto</th><th style="width:40px">Qtd</th><th style="width:75px">Total</th></tr></thead>
+        <tbody id="tb-dash-v"></tbody>
+      </table></div>
+    </div>
+    <div>
+      <div class="sh"><span class="st">Alertas de estoque</span></div>
+      <div id="dash-alertas"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ESTOQUE ===================== -->
+<div class="sc" id="sc-estoque">
+  <div class="padbar">
+    <b>Padrão geral:</b>
+    <span>Margem <input type="number" id="pad-marg" value="50" onchange="updatePadrao()">%</span>
+    <span>Promoção <input type="number" id="pad-promo" value="0" onchange="updatePadrao()">%</span>
+    <select class="cat-filter" id="cat-filter-estoque" onchange="renderEstoque()" style="margin-left:auto"></select>
+  </div>
+  <div class="sh">
+    <span class="st">Produtos em estoque (<span id="cnt-estoque">0</span>)</span>
+    <button class="btn btn-primary" onclick="goTab('entrada')"><span aria-hidden="true">+</span> Adicionar</button>
+  </div>
+  <div class="tw"><table>
+    <thead><tr>
+      <th style="width:130px">Produto</th><th style="width:55px">Código</th><th style="width:80px">Categoria</th><th style="width:40px">Qtd</th>
+      <th style="width:60px">Custo</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
+      <th style="width:70px">Preço</th><th style="width:75px">Lucro gar.</th><th style="width:50px">Ações</th>
+    </tr></thead>
+    <tbody id="tb-estoque"></tbody>
+  </table></div>
+</div>
+
+<!-- ===================== ENTRADA DE ESTOQUE ===================== -->
+<div class="sc" id="sc-entrada">
+  <div class="tabs2">
+    <button class="tab2 on" data-et="novo" onclick="goEntradaTab('novo')">Cadastrar produto novo</button>
+    <button class="tab2" data-et="repor" onclick="goEntradaTab('repor')">Repor estoque existente</button>
+  </div>
+
+  <div id="et-novo">
+    <div class="grid2">
+      <div>
+        <div class="field"><label>Nome do produto</label><input id="np-nome" type="text" placeholder="Ex: Anel Liso de Prata"></div>
+        <div class="grid2">
+          <div class="field"><label>Código</label><input id="np-cod" type="text" placeholder="P010"></div>
+          <div class="field"><label>Fornecedor</label><input id="np-forn" type="text" placeholder="Fornecedor"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Categoria</label>
+            <select id="np-categoria">
+              <option>Anéis</option><option>Brincos</option><option>Colares</option>
+              <option>Pulseiras</option><option>Berloques</option><option>Correntes</option>
+              <option>Tornozeleiras</option><option>Outros</option>
+            </select>
+          </div>
+          <div class="field"><label>Quantidade</label><input id="np-qtd" type="number" value="1" oninput="previewNovo()"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Custo de compra (uni)</label><input id="np-custo" type="number" step="0.01" value="0" oninput="previewNovo()"></div>
+          <div class="field"><label>Gastos / Gordura (uni)</label><input id="np-gastos" type="number" step="0.01" value="0" oninput="previewNovo()"></div>
+        </div>
+        <div class="field"><label>Categoria de insumo</label>
+          <select id="np-insumo" onchange="previewNovo()">
+            <option value="0">Sem insumo</option>
+            <option value="3.60">Pequena (R$ 3,60)</option>
+            <option value="5.70">Média (R$ 5,70)</option>
+            <option value="9.40">Grande (R$ 9,40)</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label><input type="checkbox" id="np-ovm" onchange="previewNovo()"> Margem personalizada (%)</label>
+            <input id="np-marg" type="number" value="50" disabled oninput="previewNovo()">
+          </div>
+          <div class="field">
+            <label><input type="checkbox" id="np-ovp" onchange="previewNovo()"> Promoção personalizada (%)</label>
+            <input id="np-promo" type="number" value="0" disabled oninput="previewNovo()">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="salvarNovoProduto()"><span aria-hidden="true">💾</span> Salvar produto</button>
+      </div>
+      <div>
+        <div class="panel-card">
+          <div class="st" style="margin-bottom:8px">Pré-visualização de preço</div>
+          <div class="metrics3" id="np-preview"></div>
+          <div class="formula-box">
+            <b>Base</b> = Custo + Gastos + Insumo<br>
+            <b>Preço c/ promoção</b> (garante a margem) = Base × (1 + Margem%)<br>
+            <b>Preço de venda</b> (etiqueta) = Preço c/promoção ÷ (1 − Promoção%)<br>
+            <b>Lucro garantido</b> = Preço c/promoção − Base
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="et-repor" style="display:none">
+    <div class="grid2">
+      <div>
+        <div class="field"><label>Produto</label>
+          <select id="rep-prod" onchange="updateReporInfo()"></select>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Quantidade a adicionar</label><input id="rep-qtd" type="number" value="1"></div>
+          <div class="field"><label>Data</label><input id="rep-data" type="text" placeholder="dd/mm/aaaa"></div>
+        </div>
+        <div class="field"><label>Novo custo de compra (opcional)</label><input id="rep-custo" type="number" step="0.01" placeholder="manter custo atual"></div>
+        <div class="field"><label>Observação</label><input id="rep-obs" type="text" placeholder="Opcional"></div>
+        <button class="btn btn-primary" onclick="salvarReposicao()"><span aria-hidden="true">💾</span> Salvar reposição</button>
+      </div>
+      <div class="panel-card" id="rep-info" style="font-size:12px;color:var(--color-text-secondary)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== VENDAS ===================== -->
+<div class="sc" id="sc-vendas">
+  <div class="tabs2">
+    <button class="tab2 on" data-vt="todas" onclick="goVendasTab('todas')">Todas as vendas</button>
+    <button class="tab2" data-vt="saidas" onclick="goVendasTab('saidas')">Saídas de estoque</button>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th style="width:80px">Data</th><th>Produto</th><th style="width:40px">Qtd</th><th style="width:65px">Preço</th><th style="width:60px">Desc.</th><th style="width:75px">Total</th><th style="width:75px">Lucro</th><th>Obs</th></tr></thead>
+    <tbody id="tb-vendas"></tbody>
+  </table></div>
+</div>
+
+<!-- ===================== NOVA VENDA ===================== -->
+<div class="sc" id="sc-novavenda">
+  <div class="grid2">
+    <div>
+      <div class="field"><label>Produto</label><select id="nv-prod" onchange="previewVenda()"></select></div>
+      <div class="grid2">
+        <div class="field"><label>Quantidade</label><input id="nv-qtd" type="number" value="1" min="1" oninput="previewVenda()"></div>
+        <div class="field"><label>Data</label><input id="nv-data" type="text" placeholder="dd/mm/aaaa"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Preço unitário (R$)</label><input id="nv-preco" type="number" step="0.01" oninput="previewVenda()"></div>
+        <div class="field"><label>Desconto adicional (%)</label><input id="nv-desc" type="number" step="0.01" value="0" oninput="previewVenda()"></div>
+      </div>
+      <div class="field"><label>Observação</label><input id="nv-obs" type="text" placeholder="Opcional"></div>
+      <button class="btn btn-primary" onclick="salvarVenda()"><span aria-hidden="true">🛒</span> Registrar venda</button>
+    </div>
+    <div class="panel-card">
+      <div class="st" style="margin-bottom:8px">Resumo da venda</div>
+      <div class="metrics3" id="nv-preview"></div>
+      <div class="formula-box" id="nv-estoque-info" style="margin-top:14px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== RELATORIO ===================== -->
+<div class="sc" id="sc-relatorio">
+  <div class="sh"><span class="st">Relatório por produto</span></div>
+  <div class="tw"><table>
+    <thead><tr><th>Produto</th><th style="width:60px">Categoria</th><th style="width:55px">Vendas</th><th style="width:45px">Qtd</th><th style="width:80px">Faturamento</th><th style="width:70px">Lucro</th><th style="width:60px">Margem</th></tr></thead>
+    <tbody id="tb-relatorio"></tbody>
+  </table></div>
+</div>
+
+<!-- ===================== CONFIG ===================== -->
+<div class="sc" id="sc-config">
+  <div class="panel-card" style="max-width:560px">
+    <div class="st" style="margin-bottom:10px">Conexão com Google Sheets (via Apps Script)</div>
+    <div class="field">
+      <label>URL do App da Web (Apps Script)</label>
+      <input id="cfg-url" type="text" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <button class="btn btn-primary" id="btn-conectar" onclick="conectarGS()"><span aria-hidden="true">⚡</span> Conectar e carregar dados</button>
+    <div id="cfg-status" style="font-size:12px;margin-top:10px;color:var(--color-text-secondary)"></div>
+    <div class="formula-box" style="margin-top:14px">
+      <b>Como funciona:</b> ao conectar, o app busca todos os produtos e vendas da sua planilha e substitui os dados de demonstração. A partir daí, cadastrar produtos, repor estoque e registrar vendas grava direto na planilha.<br><br>
+      <b>Estrutura esperada:</b><br>
+      Aba "Controle de Estoque" (A–M): Nome | Código | Fornecedor | Categoria | Qtd | Custo uni | Gastos | Insumos | Margem% | Promoção% | Preço de Venda | Preço c/Promo | Lucro Garantido<br><br>
+      Aba "Venda" (A–I): Data | Produto | Código | Qtd | Preço uni | Desconto% | Total | Lucro | Obs
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ===================== MODAL EDIÇÃO PRODUTO ===================== -->
+<div class="modal-bg" id="modal-edit">
+  <div class="modal">
+    <div class="modal-h"><span class="st">Editar produto</span><button class="btn btn-sm" onclick="fecharModal()"><span aria-hidden="true">✕</span></button></div>
+    <input type="hidden" id="ed-cod">
+    <div class="field"><label>Nome</label><input id="ed-nome" type="text"></div>
+    <div class="grid2">
+      <div class="field"><label>Categoria</label>
+        <select id="ed-categoria">
+          <option>Anéis</option><option>Brincos</option><option>Colares</option>
+          <option>Pulseiras</option><option>Berloques</option><option>Correntes</option>
+          <option>Tornozeleiras</option><option>Outros</option>
+        </select>
+      </div>
+      <div class="field"><label>Qtd</label><input id="ed-qtd" type="number"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Custo uni</label><input id="ed-custo" type="number" step="0.01" oninput="previewEdit()"></div>
+      <div class="field"><label>Gastos</label><input id="ed-gastos" type="number" step="0.01" oninput="previewEdit()"></div>
+    </div>
+    <div class="field"><label>Insumo</label>
+      <select id="ed-insumo" onchange="previewEdit()">
+        <option value="0">Sem insumo</option>
+        <option value="3.60">Pequena (R$ 3,60)</option>
+        <option value="5.70">Média (R$ 5,70)</option>
+        <option value="9.40">Grande (R$ 9,40)</option>
+      </select>
+    </div>
+    <div class="grid2">
+      <div class="field"><label><input type="checkbox" id="ed-ovm" onchange="previewEdit()"> Margem personalizada (%)</label><input id="ed-marg" type="number" oninput="previewEdit()"></div>
+      <div class="field"><label><input type="checkbox" id="ed-ovp" onchange="previewEdit()"> Promoção personalizada (%)</label><input id="ed-promo" type="number" oninput="previewEdit()"></div>
+    </div>
+    <div class="metrics3" id="ed-preview" style="margin-bottom:10px"></div>
+    <button class="btn btn-primary" onclick="salvarEdicao()"><span aria-hidden="true">💾</span> Salvar alterações</button>
+  </div>
+</div>
+
+<script>
+function brl(v){return'R$ '+Math.max(0,Number(v)||0).toFixed(2).replace('.',',');}
+function pct(v){return Number(v).toFixed(2).replace('.',',')+'%';}
+function toast(id,msg,ok){const t=document.getElementById(id);t.textContent=msg;t.style.display='flex';t.style.background=ok?'var(--color-background-success)':'var(--color-background-danger)';t.style.color=ok?'var(--color-text-success)':'var(--color-text-danger)';setTimeout(()=>t.style.display='none',3000);}
+function hojeStr(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+
+// ---------- ESTADO GLOBAL ----------
+let padMarg=50, padPromo=0;
+let gsUrl='';
+let conectado=false;
+
+let produtos=[
+  {nome:'OUTUBRO ROSA',cod:'P001',forn:'Silver Crown',categoria:'Outros',qtd:1,custo:0.01,gastos:5.81,insumo:2.9,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'kit limpa Prata!',cod:'P002',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Quíntuplo zircônia coração',cod:'P003',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Colar Elo Coração 45cm',cod:'P004',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:42.75,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Trio Argola Liso Fio Quadrado',cod:'P005',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:74.7,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Berloque Separador de Prata Duas Anéis Casal',cod:'P006',forn:'Silver Crown',categoria:'Berloques',qtd:1,custo:30.24,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pulseira Inspiração Pandora coração crav (19cm)',cod:'P007',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Inspiração Pandora 2,4mm Maleável (18cm)',cod:'P008',forn:'Silver Crown',categoria:'Outros',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Coração Vermelho Cravejado (16)',cod:'P009',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:25.95,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Coração Vermelho Cravejado (24)',cod:'P010',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:25.95,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Ponto de Luz Rosa 5mm (12)',cod:'P011',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:19.22,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Ponto de Luz Rosa 5mm (16)',cod:'P012',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:19.22,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel de Prata Solitário Cravejado Pérola (16)',cod:'P013',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:33.0,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Colar de Prata Elo Coração Fio 040 60cm',cod:'P014',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:49.21,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Colar de Prata Singapura Fio 020',cod:'P015',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:34.02,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Gargantilha Dois Corações Vazado Cravejado 45cm',cod:'P016',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:35.64,gastos:3.75,insumo:1.88,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Gargantilha de Prata Corações Cravejados 45cm',cod:'P017',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:26.93,gastos:9.78,insumo:4.89,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Gargantilha Coração 8mm Vermelho Cravejado 40cm',cod:'P018',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:56.88,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Gargantilha de Prata Coração Cravejado Passante 45cm',cod:'P019',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:15.84,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Coração Azul Cravejado (14)',cod:'P020',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:33.69,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco folha G borboleta',cod:'P021',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:4.15,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco folha borboleta M',cod:'P022',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:4.15,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco folha borboleta P',cod:'P023',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:4.15,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Argola Fio Ondulado M',cod:'P024',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:27.55,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco borboleta cravejado',cod:'P025',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:35.0,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco Flor zirconia colorida',cod:'P026',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:30.4,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco patinha vazada',cod:'P027',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:32.0,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco Meio coração tarraxa M',cod:'P028',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:11.71,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco Meio Coração G',cod:'P029',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:11.71,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto infantil colar e brinco',cod:'P030',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:59.85,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Flor II com zircônias',cod:'P031',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:56.9,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Colar Elo Coração 40cm',cod:'P032',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:34.2,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pulseira Corações pindurados Turmalina',cod:'P033',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:33.91,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Trio estrelas cristal',cod:'P034',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:14.24,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Tornozeleira 3 Corações lisos',cod:'P035',forn:'Silver Crown',categoria:'Tornozeleiras',qtd:1,custo:33.0,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Berloque Pezinho Duplo',cod:'P036',forn:'Silver Crown',categoria:'Berloques',qtd:1,custo:24.0,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Berloque Coração dividido',cod:'P037',forn:'Silver Crown',categoria:'Berloques',qtd:1,custo:31.73,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Berloque Flor com zircônia',cod:'P038',forn:'Silver Crown',categoria:'Berloques',qtd:1,custo:32.77,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Berloque coração vazado Cravejado G',cod:'P039',forn:'Silver Crown',categoria:'Berloques',qtd:1,custo:26.82,gastos:6.5,insumo:3.25,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Quíntuplo Bola prata',cod:'P040',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Quíntuplo Zircônia Quadrado',cod:'P041',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Kit Semaninha',cod:'P042',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:21.8,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Kit semaninha',cod:'P043',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:21.8,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Zircônia Verde Esmeralda',cod:'P044',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:40.6,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Zircônia Azul Claro',cod:'P045',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:40.6,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Zircônia Vermelho',cod:'P046',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:40.6,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Zircônia Turmalina',cod:'P047',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:40.6,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Chocker Aro Aurora',cod:'P048',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:37.9,gastos:8.39,insumo:4.2,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Chocker Aro Gota',cod:'P049',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:37.76,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Bracelete torcido II',cod:'P050',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:30.4,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pulseira corações lilás',cod:'P051',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:33.91,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pulseira 5 corações turmalina',cod:'P052',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:32.68,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Ziguezague de Prata (20)',cod:'P053',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:23.07,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Ziguezague c Zircônia tam 16',cod:'P054',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Ziguezague com Zircônia tam 22',cod:'P055',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel em V Cravejado Colorido de Prata',cod:'P056',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:16.79,gastos:3.03,insumo:1.51,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Bracelete Quadrado de Prata',cod:'P057',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:26.16,gastos:3.03,insumo:1.51,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Berloque Coração Cravejado Envelhecido de Prata Inspired',cod:'P058',forn:'Silver Crown',categoria:'Berloques',qtd:1,custo:15.84,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Cravação Inglesa Quadrado Verde de Prata (18)',cod:'P059',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:23.8,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Prego Liso de Prata (18)',cod:'P060',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:23.07,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Coração Vermelho de Prata (16)',cod:'P061',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:26.19,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco Orgânico Vazado Liso de Prata',cod:'P062',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:35.47,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Borboleta Cravejada de Prata (40cm)',cod:'P063',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:71.42,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Bracelete Fio Torcido 2,3mm',cod:'P064',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:35.71,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pulseira Elo Corações 18,5cm',cod:'P065',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:11.32,gastos:3.03,insumo:1.51,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco Hexagono Fio Triangulo de Prata',cod:'P066',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:19.04,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Coração Origami Liso de Prata (40cm)',cod:'P067',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:65.47,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco Folha Martelado Círculo de Prata',cod:'P068',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:26.19,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Trio de Brinco Borboleta Origami de Prata.',cod:'P069',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:38.09,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Ponto de Luz Gota Turmalina de Prata',cod:'P070',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:52.37,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Chevron De Prata (20)',cod:'P071',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:16.19,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Liso Ondulado de Prata (20)',cod:'P072',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:19.22,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Trio Bolinha de Prata',cod:'P073',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:28.33,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Corações Alternados (18)',cod:'P074',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:25.09,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pingente Cruz Liso',cod:'P075',forn:'Silver Crown',categoria:'Pingentes',qtd:1,custo:11.34,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Ziguezague de Prata (18)',cod:'P076',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:23.07,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto Redondo Martelado Vazado Liso de Prata',cod:'P077',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:69.04,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Conjunto ponto de luz coração Vermelho 45cm',cod:'P078',forn:'Silver Crown',categoria:'Conjuntos',qtd:1,custo:41.37,gastos:7.33,insumo:3.67,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Choker 7 Círculo Liso Pendurado de Prata',cod:'P079',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:60.81,gastos:7.33,insumo:3.67,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pulseira Masculina Cartier 2,7mm Fio 080 de Prata',cod:'P080',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:48.67,gastos:4.78,insumo:2.39,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Pulseira Laminada Fio 035 3mm de Prata',cod:'P081',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:27.72,gastos:4.78,insumo:2.39,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Colar Veneziana v15 com Bolinha de Prata (40cm)',cod:'P082',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:34.16,gastos:5.58,insumo:2.79,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Coração Abaulado Alongado Liso de Prata (18)',cod:'P083',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:16.29,gastos:4.78,insumo:2.39,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Coração Verde Cravejado de Prata (16)',cod:'P084',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:29.15,gastos:4.78,insumo:2.39,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Gota Verde Cravejado de Prata 18',cod:'P085',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:22.01,gastos:4.78,insumo:2.39,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Corrente Masculina Grumet 2mm 60cm',cod:'P086',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:57.27,gastos:5.81,insumo:2.9,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Flor vermelho TAM 16',cod:'P087',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:0,gastos:5.0,insumo:2.5,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Solitário Ponto de Luz 3mm (18)',cod:'P088',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:20.7,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Corrente Masculina Grumet 2mm Fio 050 (70cm)',cod:'P089',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:57.27,gastos:5.81,insumo:2.9,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel Aparador 5 pedras cravejado (14)',cod:'P090',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:15.26,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Anel onda do mar (18)',cod:'P091',forn:'Silver Crown',categoria:'Anéis',qtd:1,custo:18.0,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Berloque café laser',cod:'P092',forn:'Silver Crown',categoria:'Berloques',qtd:1,custo:18.67,gastos:3.03,insumo:1.51,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'brinco bastões liso e cravejado 30mm',cod:'P093',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:56.43,gastos:7.43,insumo:3.71,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'brinco assimétrico vazado cravejado 26mm',cod:'P094',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:0.0,gastos:0.0,insumo:0.0,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Choker 5 Trevos Preto Resinado Misto',cod:'P095',forn:'Silver Crown',categoria:'Colares',qtd:1,custo:70.49,gastos:7.73,insumo:3.87,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Bracelet Coração Vazado de Prata',cod:'P096',forn:'Silver Crown',categoria:'Pulseiras',qtd:1,custo:30.6,gastos:7.15,insumo:3.58,ovm:false,marg:null,ovp:false,promo:null},
+  {nome:'Brinco Ziguezague Fio Quadrado de Prata',cod:'P097',forn:'Silver Crown',categoria:'Brincos',qtd:1,custo:19.04,gastos:6.0,insumo:3.0,ovm:false,marg:null,ovp:false,promo:null}
+];
+
+let vendas=[];
+
+// ---------- CALCULO DE PRECO ----------
+function calcProduto(p){
+  const base=Number(p.custo||0)+Number(p.gastos||0)+Number(p.insumo||0);
+  let marg=p.ovm&&p.marg!=null?Number(p.marg):padMarg;
+  let promo=p.ovp&&p.promo!=null?Number(p.promo):padPromo;
+  if(promo>=99)promo=99;
+  if(promo<0)promo=0;
+  const precoPromo=base*(1+marg/100);
+  const preco=precoPromo/(1-promo/100);
+  const lucroGarantido=precoPromo-base;
+  return{base,marg,promo,precoPromo,preco,lucroGarantido};
+}
+function vendaCalc(v){
+  const total=v.qtd*v.preco*(1-((v.desc||0)/100));
+  const prod=produtos.find(p=>p.cod===v.cod);
+  let lucro=0;
+  if(prod){const c=calcProduto(prod);lucro=total-(c.base*v.qtd);}
+  return{total,lucro};
+}
+function parseData(str){
+  if(!str)return new Date(2000,0,1);
+  if(typeof str==='string'&&str.includes('/')){const[d,m,a]=str.split('/').map(Number);return new Date(a,m-1,d);}
+  const dd=new Date(str);
+  return isNaN(dd)?new Date(2000,0,1):dd;
+}
+function formatDateBR(v){
+  if(!v)return hojeStr();
+  if(typeof v==='string'&&v.includes('/'))return v;
+  const d=new Date(v);
+  if(isNaN(d))return hojeStr();
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+}
+function getSemanaAtual(ref){const d=new Date(ref);const dia=d.getDay();const seg=new Date(d);seg.setDate(d.getDate()-((dia+6)%7));seg.setHours(0,0,0,0);const dom=new Date(seg);dom.setDate(seg.getDate()+6);dom.setHours(23,59,59,999);return[seg,dom];}
+function getCategorias(){return[...new Set(produtos.map(p=>p.categoria))];}
+
+// ================= GOOGLE SHEETS (Apps Script) =================
+async function conectarGS(){
+  const url=document.getElementById('cfg-url').value.trim();
+  if(!url){toast('t-dash','Cole a URL do App da Web do Apps Script.',false);return;}
+  gsUrl=url;
+  const btn=document.getElementById('btn-conectar');
+  const status=document.getElementById('cfg-status');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Conectando...';
+  status.textContent='Buscando dados da planilha...';
+  try{
+    const res=await fetch(gsUrl);
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+
+    produtos=(data.estoque||[]).map(r=>({
+      nome:r['Nome']||'', cod:String(r['Código']||''), forn:r['Fornecedor']||'',
+      categoria:r['Categoria']||'Outros',
+      qtd:Number(r['Qtd'])||0, custo:Number(r['Custo uni'])||0, gastos:Number(r['Gastos'])||0, insumo:Number(r['Insumos'])||0,
+      ovm:true, marg:(Number(r['Margem%'])||0)*100,
+      ovp:true, promo:(Number(r['Promoção%'])||0)*100,
+    }));
+
+    vendas=(data.vendas||[]).map(r=>({
+      data:formatDateBR(r['Data']), cod:String(r['Código']||''), produto:r['Produto']||'',
+      qtd:Number(r['Qtd'])||0, preco:Number(r['Preço uni'])||0, desc:(Number(r['Desconto%'])||0)*100,
+      obs:r['Obs']||''
+    }));
+
+    conectado=true;
+    const pill=document.getElementById('gs-pill');
+    pill.textContent='⬤ Conectado';pill.classList.add('ok');
+    status.innerHTML=`<span style="color:var(--color-text-success)"><span aria-hidden="true">✓</span> ${produtos.length} produto(s) e ${vendas.length} venda(s) carregados.</span>`;
+    document.getElementById('cat-filter-estoque').innerHTML='';
+    document.getElementById('cat-filter-vendidos').innerHTML='';
+    document.getElementById('rep-data').value=hojeStr();
+    document.getElementById('nv-data').value=hojeStr();
+    goTab('dashboard');
+    toast('t-dash','Conectado e dados carregados da planilha!',true);
+  }catch(e){
+    status.innerHTML=`<span style="color:var(--color-text-danger)"><span aria-hidden="true">⚠</span> Erro ao conectar: ${e.message}. Confira se a URL está correta e se a implantação está com acesso "Qualquer pessoa".</span>`;
+    toast('t-dash','Falha ao conectar com a planilha.',false);
+  }finally{
+    btn.disabled=false;btn.innerHTML='<span aria-hidden="true">⚡</span> Conectar e carregar dados';
+  }
+}
+async function gsPost(payload){
+  if(!gsUrl){toast('t-dash','Conecte ao Google Sheets na aba Config primeiro.',false);return null;}
+  try{
+    const res=await fetch(gsUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+    const json=await res.json();
+    if(!json.ok)toast('t-dash','Planilha retornou erro: '+(json.error||'desconhecido'),false);
+    return json;
+  }catch(e){toast('t-dash','Erro de conexão com a planilha.',false);return null;}
+}
+async function syncAll(){
+  if(!gsUrl){toast('t-dash','Conecte ao Google Sheets na aba Config primeiro.',false);goTab('config');return;}
+  const btn=document.getElementById('btn-sync');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> Sincronizando...';
+  await conectarGS();
+  btn.disabled=false;btn.innerHTML='<span aria-hidden="true">↻</span> Sincronizar';
+}
+
+// ---------- NAVEGACAO ----------
+function goTab(tab){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  document.querySelectorAll('.sc').forEach(s=>s.classList.toggle('on',s.id==='sc-'+tab));
+  if(tab==='dashboard')renderDash();
+  if(tab==='estoque')renderEstoque();
+  if(tab==='entrada'){populaSelectProdutos('rep-prod');updateReporInfo();previewNovo();if(!document.getElementById('rep-data').value)document.getElementById('rep-data').value=hojeStr();}
+  if(tab==='vendas')renderVendas();
+  if(tab==='novavenda'){populaSelectProdutos('nv-prod');previewVenda();if(!document.getElementById('nv-data').value)document.getElementById('nv-data').value=hojeStr();}
+  if(tab==='relatorio')renderRelatorio();
+}
+function goEntradaTab(t){
+  document.querySelectorAll('[data-et]').forEach(b=>b.classList.toggle('on',b.dataset.et===t));
+  document.getElementById('et-novo').style.display=t==='novo'?'block':'none';
+  document.getElementById('et-repor').style.display=t==='repor'?'block':'none';
+}
+function goVendasTab(t){
+  document.querySelectorAll('[data-vt]').forEach(b=>b.classList.toggle('on',b.dataset.vt===t));
+  renderVendas(t);
+}
+
+// ================= DASHBOARD =================
+function renderDash(){
+  const dw=document.getElementById('dash-demo-warning');
+  dw.innerHTML=conectado?'':`<div class="alert aw" style="margin-bottom:14px"><span aria-hidden="true">ℹ</span><div><b>Modo demonstração</b><br><span style="font-size:11px">Dados de exemplo. Conecte sua planilha na aba Config para ver os dados reais.</span></div></div>`;
+
+  const hoje=new Date();
+  const mesAtual=hoje.getMonth(),anoAtual=hoje.getFullYear();
+  let mesAnt=mesAtual-1,anoAnt=anoAtual; if(mesAnt<0){mesAnt=11;anoAnt--;}
+  const mesNomes=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  const vcalc=vendas.map(v=>{const c=vendaCalc(v);return{...v,d:parseData(v.data),total:c.total,lucro:c.lucro};});
+
+  const fatTotal=vcalc.reduce((a,v)=>a+v.total,0);
+  const lucTotal=vcalc.reduce((a,v)=>a+v.lucro,0);
+  const zero=produtos.filter(p=>p.qtd<=0).length;
+  document.getElementById('dash-metrics').innerHTML=`
+    <div class="mc"><div class="ml"><span style="font-size:11px" aria-hidden="true">📦</span> Produtos</div><div class="mv">${produtos.length}</div><div class="ms">cadastrados</div></div>
+    <div class="mc"><div class="ml"><span style="font-size:11px" aria-hidden="true">⚠</span> Sem estoque</div><div class="mv" style="color:var(--color-text-danger)">${zero}</div><div class="ms">peças zeradas</div></div>
+    <div class="mc"><div class="ml"><span style="font-size:11px" aria-hidden="true">R$</span> Faturamento total</div><div class="mv">${brl(fatTotal)}</div><div class="ms">${vendas.length} venda(s)</div></div>
+    <div class="mc"><div class="ml"><span style="font-size:11px" aria-hidden="true">↗</span> Lucro total</div><div class="mv" style="color:var(--color-text-success)">${brl(lucTotal)}</div><div class="ms">acumulado</div></div>`;
+
+  const doMes=(mes,ano)=>vcalc.filter(v=>v.d.getMonth()===mes&&v.d.getFullYear()===ano);
+  const vAtual=doMes(mesAtual,anoAtual),vAnterior=doMes(mesAnt,anoAnt);
+  const fatAtual=vAtual.reduce((a,v)=>a+v.total,0),lucAtual=vAtual.reduce((a,v)=>a+v.lucro,0);
+  const fatAnt=vAnterior.reduce((a,v)=>a+v.total,0),lucAnt=vAnterior.reduce((a,v)=>a+v.lucro,0);
+
+  function deltaHtml(atual,anterior){
+    if(anterior===0&&atual===0)return`<span class="delta delta-flat"><span style="font-size:10px" aria-hidden="true">−</span> 0%</span>`;
+    if(anterior===0)return`<span class="delta delta-up"><span style="font-size:10px" aria-hidden="true">↑</span> novo</span>`;
+    const diff=((atual-anterior)/anterior)*100;
+    const cls=diff>0.01?'delta-up':diff<-0.01?'delta-down':'delta-flat';
+    const icon=diff>0.01?'↑':diff<-0.01?'↓':'−';
+    return`<span class="delta ${cls}"><span style="font-size:10px">${icon}</span> ${Math.abs(diff).toFixed(1).replace('.',',')}%</span>`;
+  }
+  document.getElementById('mes-metrics').innerHTML=`
+    <div class="mc highlight"><div class="ml"><span style="font-size:11px" aria-hidden="true">R$</span> Vendas de ${mesNomes[mesAtual]}</div><div class="mv">${brl(fatAtual)} ${deltaHtml(fatAtual,fatAnt)}</div><div class="ms">${vAtual.length} venda(s) • mês anterior: ${brl(fatAnt)}</div></div>
+    <div class="mc highlight"><div class="ml"><span style="font-size:11px" aria-hidden="true">↗</span> Lucro de ${mesNomes[mesAtual]}</div><div class="mv">${brl(lucAtual)} ${deltaHtml(lucAtual,lucAnt)}</div><div class="ms">mês anterior: ${brl(lucAnt)}</div></div>
+    <div class="mc"><div class="ml"><span style="font-size:11px" aria-hidden="true">%</span> Margem do mês</div><div class="mv">${fatAtual>0?pct((lucAtual/fatAtual)*100):'—'}</div><div class="ms">lucro / faturamento</div></div>
+    <div class="mc"><div class="ml"><span style="font-size:11px" aria-hidden="true">🧾</span> Ticket médio</div><div class="mv">${vAtual.length?brl(fatAtual/vAtual.length):'—'}</div><div class="ms">por venda</div></div>`;
+
+  const[inicioSemana,fimSemana]=getSemanaAtual(hoje);
+  const vSemana=vcalc.filter(v=>v.d>=inicioSemana&&v.d<=fimSemana);
+  const fatSemana=vSemana.reduce((a,v)=>a+v.total,0),lucSemana=vSemana.reduce((a,v)=>a+v.lucro,0);
+  const fmtData=d=>d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  document.getElementById('semana-metrics').innerHTML=`
+    <div class="mc"><div class="ml">Faturamento</div><div class="mv">${brl(fatSemana)}</div><div class="ms">${fmtData(inicioSemana)} a ${fmtData(fimSemana)}</div></div>
+    <div class="mc"><div class="ml">Lucro</div><div class="mv" style="color:var(--color-text-success)">${brl(lucSemana)}</div></div>
+    <div class="mc"><div class="ml">Vendas</div><div class="mv">${vSemana.length}</div></div>`;
+
+  const porMes={};
+  vcalc.forEach(v=>{const k=`${v.d.getFullYear()}-${v.d.getMonth()}`;if(!porMes[k])porMes[k]={fat:0,luc:0,mes:v.d.getMonth(),ano:v.d.getFullYear(),qtd:0};porMes[k].fat+=v.total;porMes[k].luc+=v.lucro;porMes[k].qtd++;});
+  const mesesArr=Object.values(porMes).sort((a,b)=>b.fat-a.fat);
+  const melhor=mesesArr[0];
+  const ehMesAtual=melhor&&melhor.mes===mesAtual&&melhor.ano===anoAtual;
+  document.getElementById('melhor-metrics').innerHTML=melhor?`
+    <div class="mc warn"><div class="ml">Mês</div><div class="mv" style="font-size:15px">${mesNomes[melhor.mes]}/${melhor.ano}</div>${ehMesAtual?'<div class="ms">é o mês atual!</div>':''}</div>
+    <div class="mc warn"><div class="ml">Faturamento</div><div class="mv">${brl(melhor.fat)}</div></div>
+    <div class="mc warn"><div class="ml">Lucro</div><div class="mv">${brl(melhor.luc)}</div></div>`:'<div style="font-size:12px;color:var(--color-text-secondary);padding:8px">Sem dados suficientes.</div>';
+
+  const meta=Number(document.getElementById('meta-input').value)||1;
+  const metaPerc=Math.min((fatAtual/meta)*100,100);
+  const falta=Math.max(meta-fatAtual,0);
+  document.getElementById('meta-box').innerHTML=`
+    <div style="font-size:19px;font-weight:500">${brl(fatAtual)} <span style="font-size:12px;color:var(--color-text-tertiary);font-weight:400">de ${brl(meta)}</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:${metaPerc}%;background:${metaPerc>=100?'var(--color-text-success)':'var(--color-text-primary)'}"></div></div>
+    <div style="font-size:11px;color:var(--color-text-secondary)">${metaPerc>=100?'🎉 Meta atingida!':`Faltam ${brl(falta)} (${pct(metaPerc)} concluído)`}</div>`;
+
+  const ultimoDiaMes=new Date(anoAtual,mesAtual+1,0).getDate();
+  const diaAtual=hoje.getDate();
+  const mediaDiaria=fatAtual/diaAtual;
+  const previsao=mediaDiaria*ultimoDiaMes;
+  document.getElementById('previsao-box').innerHTML=`
+    <div style="font-size:19px;font-weight:500">${brl(previsao)}</div>
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-top:4px">com base na média diária de ${brl(mediaDiaria)} (dia ${diaAtual} de ${ultimoDiaMes})</div>
+    ${deltaHtml(previsao,fatAnt)}<span style="font-size:11px;color:var(--color-text-tertiary)"> vs. mês anterior</span>`;
+
+  const descMedio=vAtual.length?vAtual.reduce((a,v)=>a+(v.desc||0),0)/vAtual.length:0;
+  const margemRealMes=fatAtual>0?(lucAtual/fatAtual)*100:0;
+  const margemAlvo=padMarg/(1+padMarg/100);
+  document.getElementById('margem-metrics').innerHTML=`
+    <div class="mc"><div class="ml">Desconto médio aplicado</div><div class="mv">${pct(descMedio)}</div><div class="ms">promoção padrão: ${pct(padPromo)}</div></div>
+    <div class="mc"><div class="ml">Margem real do mês</div><div class="mv">${pct(margemRealMes)}</div></div>
+    <div class="mc"><div class="ml">Margem alvo (s/ desconto)</div><div class="mv">${pct(margemAlvo)}</div><div class="ms">${margemRealMes<margemAlvo?'⚠ abaixo do planejado':'dentro do planejado'}</div></div>`;
+
+  const barData=[];
+  for(let i=5;i>=0;i--){let m=mesAtual-i,a=anoAtual;while(m<0){m+=12;a--;}const k=`${a}-${m}`;barData.push({mes:m,ano:a,fat:porMes[k]?porMes[k].fat:0,atual:(m===mesAtual&&a===anoAtual)});}
+  const maxFat=Math.max(...barData.map(b=>b.fat),1);
+  document.getElementById('bar-chart').innerHTML=barData.map(b=>{
+    const h=Math.max((b.fat/maxFat)*100,b.fat>0?6:1);
+    return`<div class="bar-col"><div class="bar" style="height:${h}%;background:${b.atual?'var(--color-text-primary)':'var(--color-border-secondary)'}">${b.fat>0?`<span class="bar-val" style="color:${b.atual?'var(--color-background-primary)':'var(--color-text-secondary)'}">${brl(b.fat).replace('R$ ','')}</span>`:''}</div><div class="bar-label">${mesNomes[b.mes].slice(0,3)}/${String(b.ano).slice(2)}</div></div>`;
+  }).join('');
+
+  const selVend=document.getElementById('cat-filter-vendidos');
+  if(selVend.options.length===0)selVend.innerHTML=['Todas',...getCategorias()].map(c=>`<option value="${c}">${c}</option>`).join('');
+  const catSel=selVend.value||'Todas';
+  const porProduto={};
+  vcalc.forEach(v=>{
+    if(!porProduto[v.cod])porProduto[v.cod]={qtd:0,fat:0,nome:v.produto,cod:v.cod};
+    porProduto[v.cod].qtd+=v.qtd;porProduto[v.cod].fat+=v.total;
+  });
+  let ranking=Object.values(porProduto);
+  if(catSel!=='Todas'){
+    const codsCat=produtos.filter(p=>p.categoria===catSel).map(p=>p.cod);
+    ranking=ranking.filter(r=>codsCat.includes(r.cod));
+  }
+  ranking.sort((a,b)=>b.fat-a.fat);
+  const tbMV=document.getElementById('tb-mais-vendidos');tbMV.innerHTML='';
+  if(!ranking.length){tbMV.innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--color-text-tertiary)">Sem vendas nesta categoria.</td></tr>';}
+  ranking.slice(0,5).forEach(r=>{tbMV.innerHTML+=`<tr><td title="${r.nome}">${r.nome}</td><td>${r.qtd}</td><td>${brl(r.fat)}</td></tr>`;});
+
+  const ultimaVenda={};
+  vcalc.forEach(v=>{if(!ultimaVenda[v.cod]||v.d>ultimaVenda[v.cod])ultimaVenda[v.cod]=v.d;});
+  const parados=produtos.filter(p=>p.qtd>0).map(p=>{
+    const ult=ultimaVenda[p.cod];
+    const dias=ult?Math.floor((hoje-ult)/(1000*60*60*24)):null;
+    return{...p,dias};
+  }).sort((a,b)=>{if(a.dias===null)return -1;if(b.dias===null)return 1;return b.dias-a.dias;});
+  const tbP=document.getElementById('tb-parados');tbP.innerHTML='';
+  parados.slice(0,5).forEach(p=>{
+    const txt=p.dias===null?'<span style="color:var(--color-text-danger)">nunca vendido</span>':`${p.dias} dia(s)`;
+    tbP.innerHTML+=`<tr><td title="${p.nome}">${p.nome}</td><td>${p.qtd}</td><td>${txt}</td></tr>`;
+  });
+
+  function renderDist(elId,key){
+    const grupos={};let totalGeral=0;
+    produtos.forEach(p=>{const val=p.qtd*p.custo;grupos[p[key]]=(grupos[p[key]]||0)+val;totalGeral+=val;});
+    const entries=Object.entries(grupos).sort((a,b)=>b[1]-a[1]);
+    const el=document.getElementById(elId);el.innerHTML='';
+    if(totalGeral===0){el.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary)">Sem estoque cadastrado.</div>';return;}
+    entries.forEach(([nome,val])=>{
+      const p=(val/totalGeral)*100;
+      el.innerHTML+=`<div class="dist-row"><div class="dist-label" title="${nome}">${nome}</div><div class="dist-bar"><div class="dist-fill" style="width:${p}%"></div></div><div class="dist-val">${brl(val)} (${p.toFixed(0)}%)</div></div>`;
+    });
+  }
+  renderDist('dist-categoria','categoria');
+  renderDist('dist-fornecedor','forn');
+
+  const paradosCapital=produtos.filter(p=>{
+    const ult=ultimaVenda[p.cod];
+    const dias=ult?Math.floor((hoje-ult)/(1000*60*60*24)):999;
+    return p.qtd>0&&dias>=30;
+  });
+  const valorParado=paradosCapital.reduce((a,p)=>a+p.qtd*p.custo,0);
+  const valorTotalEstoque=produtos.reduce((a,p)=>a+p.qtd*p.custo,0);
+  document.getElementById('capital-metrics').innerHTML=`
+    <div class="mc warn"><div class="ml">Capital parado (30+ dias s/ venda)</div><div class="mv">${brl(valorParado)}</div><div class="ms">${paradosCapital.length} produto(s)</div></div>
+    <div class="mc"><div class="ml">Valor total em estoque</div><div class="mv">${brl(valorTotalEstoque)}</div></div>
+    <div class="mc"><div class="ml">% do estoque parado</div><div class="mv">${valorTotalEstoque>0?pct((valorParado/valorTotalEstoque)*100):'—'}</div></div>`;
+
+  const tb=document.getElementById('tb-dash-v');tb.innerHTML='';
+  [...vcalc].sort((a,b)=>b.d-a.d).slice(0,5).forEach(v=>{tb.innerHTML+=`<tr><td>${v.data}</td><td title="${v.produto}">${v.produto}</td><td>${v.qtd}</td><td>${brl(v.total)}</td></tr>`;});
+
+  const al=document.getElementById('dash-alertas');al.innerHTML='';
+  const cr=produtos.filter(p=>p.qtd<=0);
+  if(!cr.length&&valorParado<=0){al.innerHTML=`<div class="alert as"><span aria-hidden="true">✓</span> Tudo certo por aqui!</div>`;}
+  else{
+    cr.slice(0,5).forEach(p=>{al.innerHTML+=`<div class="alert aw"><span aria-hidden="true">⚠</span><div><b>${p.nome}</b><br><span style="font-size:11px">Estoque zerado</span></div></div>`;});
+    if(valorParado>0){al.innerHTML+=`<div class="alert ad"><span aria-hidden="true">📦</span><div><b>${brl(valorParado)}</b> parados em estoque<br><span style="font-size:11px">${paradosCapital.length} produto(s) há 30+ dias sem vender</span></div></div>`;}
+  }
+}
+
+// ================= ESTOQUE =================
+function updatePadrao(){
+  padMarg=Number(document.getElementById('pad-marg').value)||0;
+  padPromo=Number(document.getElementById('pad-promo').value)||0;
+  renderEstoque();
+}
+function renderEstoque(){
+  const sel=document.getElementById('cat-filter-estoque');
+  if(sel.options.length===0)sel.innerHTML=['Todas',...getCategorias()].map(c=>`<option value="${c}">${c}</option>`).join('');
+  const catSel=sel.value||'Todas';
+  let lista=produtos;
+  if(catSel!=='Todas')lista=lista.filter(p=>p.categoria===catSel);
+  document.getElementById('cnt-estoque').textContent=lista.length;
+  const tb=document.getElementById('tb-estoque');tb.innerHTML='';
+  lista.forEach(p=>{
+    const c=calcProduto(p);
+    const margBadge=p.ovm?`<span class="badge custom">${pct(c.marg)}</span>`:`${pct(c.marg)}`;
+    const promoBadge=p.ovp?`<span class="badge custom">${pct(c.promo)}</span>`:`${pct(c.promo)}`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td title="${p.nome}">${p.nome}</td><td>${p.cod}</td><td><span class="badge">${p.categoria}</span></td><td style="${p.qtd<=0?'color:var(--color-text-danger);font-weight:500':''}">${p.qtd}</td>
+      <td>${brl(p.custo)}</td><td>${margBadge}</td><td>${promoBadge}</td>
+      <td>${brl(c.preco)}</td><td>${brl(c.lucroGarantido)}</td>
+      <td><button class="btn btn-sm" onclick="abrirEdicao('${p.cod}')"><span aria-hidden="true">✏</span></button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ---- modal edição ----
+function abrirEdicao(cod){
+  const p=produtos.find(x=>x.cod===cod);if(!p)return;
+  document.getElementById('ed-cod').value=p.cod;
+  document.getElementById('ed-nome').value=p.nome;
+  document.getElementById('ed-categoria').value=p.categoria;
+  document.getElementById('ed-qtd').value=p.qtd;
+  document.getElementById('ed-custo').value=p.custo;
+  document.getElementById('ed-gastos').value=p.gastos;
+  document.getElementById('ed-insumo').value=p.insumo;
+  document.getElementById('ed-ovm').checked=p.ovm;
+  document.getElementById('ed-marg').value=p.ovm&&p.marg!=null?p.marg:padMarg;
+  document.getElementById('ed-marg').disabled=!p.ovm;
+  document.getElementById('ed-ovp').checked=p.ovp;
+  document.getElementById('ed-promo').value=p.ovp&&p.promo!=null?p.promo:padPromo;
+  document.getElementById('ed-promo').disabled=!p.ovp;
+  previewEdit();
+  document.getElementById('modal-edit').classList.add('on');
+}
+function fecharModal(){document.getElementById('modal-edit').classList.remove('on');}
+function previewEdit(){
+  document.getElementById('ed-marg').disabled=!document.getElementById('ed-ovm').checked;
+  document.getElementById('ed-promo').disabled=!document.getElementById('ed-ovp').checked;
+  const tmp={
+    custo:Number(document.getElementById('ed-custo').value)||0,
+    gastos:Number(document.getElementById('ed-gastos').value)||0,
+    insumo:Number(document.getElementById('ed-insumo').value)||0,
+    ovm:document.getElementById('ed-ovm').checked,
+    marg:Number(document.getElementById('ed-marg').value)||0,
+    ovp:document.getElementById('ed-ovp').checked,
+    promo:Number(document.getElementById('ed-promo').value)||0,
+  };
+  const c=calcProduto(tmp);
+  document.getElementById('ed-preview').innerHTML=`
+    <div class="mc"><div class="ml">Preço c/promo</div><div class="mv">${brl(c.precoPromo)}</div></div>
+    <div class="mc"><div class="ml">Preço de venda</div><div class="mv">${brl(c.preco)}</div></div>
+    <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(--color-text-success)">${brl(c.lucroGarantido)}</div></div>`;
+}
+async function salvarEdicao(){
+  const cod=document.getElementById('ed-cod').value;
+  const p=produtos.find(x=>x.cod===cod);if(!p)return;
+  p.nome=document.getElementById('ed-nome').value;
+  p.categoria=document.getElementById('ed-categoria').value;
+  p.qtd=Number(document.getElementById('ed-qtd').value)||0;
+  p.custo=Number(document.getElementById('ed-custo').value)||0;
+  p.gastos=Number(document.getElementById('ed-gastos').value)||0;
+  p.insumo=Number(document.getElementById('ed-insumo').value)||0;
+  p.ovm=document.getElementById('ed-ovm').checked;
+  p.marg=p.ovm?Number(document.getElementById('ed-marg').value)||0:padMarg;
+  p.ovp=document.getElementById('ed-ovp').checked;
+  p.promo=p.ovp?Number(document.getElementById('ed-promo').value)||0:padPromo;
+  fecharModal();renderEstoque();
+  if(conectado){
+    const r=await gsPost({action:'updateProduto',produto:{cod:p.cod,nome:p.nome,categoria:p.categoria,qtd:p.qtd,custo:p.custo,gastos:p.gastos,insumo:p.insumo,marg:p.marg,promo:p.promo}});
+    if(r&&r.ok)toast('t-dash','Produto atualizado na planilha!',true);
+  }
+}
+
+// ================= ENTRADA: NOVO PRODUTO =================
+function previewNovo(){
+  document.getElementById('np-marg').disabled=!document.getElementById('np-ovm').checked;
+  document.getElementById('np-promo').disabled=!document.getElementById('np-ovp').checked;
+  const tmp={
+    custo:Number(document.getElementById('np-custo').value)||0,
+    gastos:Number(document.getElementById('np-gastos').value)||0,
+    insumo:Number(document.getElementById('np-insumo').value)||0,
+    ovm:document.getElementById('np-ovm').checked,
+    marg:Number(document.getElementById('np-marg').value)||0,
+    ovp:document.getElementById('np-ovp').checked,
+    promo:Number(document.getElementById('np-promo').value)||0,
+  };
+  const c=calcProduto(tmp);
+  document.getElementById('np-preview').innerHTML=`
+    <div class="mc"><div class="ml">Preço c/promo</div><div class="mv">${brl(c.precoPromo)}</div></div>
+    <div class="mc"><div class="ml">Preço de venda</div><div class="mv">${brl(c.preco)}</div></div>
+    <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(--color-text-success)">${brl(c.lucroGarantido)}</div></div>`;
+}
+async function salvarNovoProduto(){
+  const nome=document.getElementById('np-nome').value.trim();
+  const cod=document.getElementById('np-cod').value.trim()||('P0'+(produtos.length+10));
+  if(!nome){toast('t-dash','Informe o nome do produto.',false);goTab('dashboard');return;}
+  const ovm=document.getElementById('np-ovm').checked;
+  const ovp=document.getElementById('np-ovp').checked;
+  const marg=ovm?Number(document.getElementById('np-marg').value)||0:padMarg;
+  const promo=ovp?Number(document.getElementById('np-promo').value)||0:padPromo;
+  const novo={
+    nome,cod,forn:document.getElementById('np-forn').value,
+    categoria:document.getElementById('np-categoria').value,
+    qtd:Number(document.getElementById('np-qtd').value)||0,
+    custo:Number(document.getElementById('np-custo').value)||0,
+    gastos:Number(document.getElementById('np-gastos').value)||0,
+    insumo:Number(document.getElementById('np-insumo').value)||0,
+    ovm:true,marg,ovp:true,promo,
+  };
+  produtos.push(novo);
+  document.getElementById('np-nome').value='';document.getElementById('np-cod').value='';
+  document.getElementById('np-forn').value='';document.getElementById('np-qtd').value=1;
+  document.getElementById('np-custo').value=0;document.getElementById('np-gastos').value=0;
+  document.getElementById('np-insumo').value='0';
+  document.getElementById('np-ovm').checked=false;document.getElementById('np-ovp').checked=false;
+  previewNovo();
+  document.getElementById('cat-filter-estoque').innerHTML='';
+  document.getElementById('cat-filter-vendidos').innerHTML='';
+  goTab('estoque');
+  if(conectado){
+    const r=await gsPost({action:'addProduto',produto:novo});
+    toast('t-dash',r&&r.ok?'Produto cadastrado e salvo na planilha!':'Produto adicionado localmente, mas houve erro ao salvar na planilha.',r&&r.ok);
+  }else{
+    toast('t-dash','Produto cadastrado (modo demonstração — conecte a planilha para salvar de verdade).',true);
+  }
+}
+
+// ================= ENTRADA: REPOR ESTOQUE =================
+function populaSelectProdutos(selId){
+  const sel=document.getElementById(selId);
+  const cur=sel.value;
+  sel.innerHTML=produtos.map(p=>`<option value="${p.cod}">${p.nome} (${p.cod})</option>`).join('');
+  if(cur)sel.value=cur;
+}
+function updateReporInfo(){
+  const cod=document.getElementById('rep-prod').value;
+  const p=produtos.find(x=>x.cod===cod);
+  if(!p)return;
+  const c=calcProduto(p);
+  document.getElementById('rep-info').innerHTML=`
+    <b>${p.nome}</b> <span class="badge">${p.categoria}</span><br>
+    Estoque atual: <b>${p.qtd}</b><br>
+    Custo atual: <b>${brl(p.custo)}</b><br>
+    Preço de venda atual: <b>${brl(c.preco)}</b><br>
+    Lucro garantido: <b style="color:var(--color-text-success)">${brl(c.lucroGarantido)}</b>`;
+}
+async function salvarReposicao(){
+  const cod=document.getElementById('rep-prod').value;
+  const p=produtos.find(x=>x.cod===cod);if(!p)return;
+  const qtdAdd=Number(document.getElementById('rep-qtd').value)||0;
+  const novoCustoStr=document.getElementById('rep-custo').value;
+  const novoCusto=novoCustoStr!==''?Number(novoCustoStr):null;
+  p.qtd+=qtdAdd;
+  if(novoCusto!==null)p.custo=novoCusto;
+  document.getElementById('rep-custo').value='';
+  document.getElementById('rep-obs').value='';
+  updateReporInfo();
+  goTab('estoque');
+  if(conectado){
+    const r=await gsPost({action:'repor',cod:p.cod,qtdAdd,novoCusto});
+    toast('t-dash',r&&r.ok?`Estoque de "${p.nome}" atualizado na planilha (+${qtdAdd}).`:`Estoque atualizado localmente (+${qtdAdd}), mas houve erro ao salvar na planilha.`,r&&r.ok);
+  }else{
+    toast('t-dash',`Estoque de "${p.nome}" atualizado (+${qtdAdd}) — modo demonstração.`,true);
+  }
+}
+
+// ================= NOVA VENDA =================
+function previewVenda(){
+  const cod=document.getElementById('nv-prod').value;
+  const p=produtos.find(x=>x.cod===cod);
+  if(!p)return;
+  const c=calcProduto(p);
+  if(!document.getElementById('nv-preco').dataset.touched)document.getElementById('nv-preco').value=c.preco.toFixed(2);
+  if(!document.getElementById('nv-desc').dataset.touched)document.getElementById('nv-desc').value=c.promo;
+
+  const qtd=Number(document.getElementById('nv-qtd').value)||0;
+  const preco=Number(document.getElementById('nv-preco').value)||0;
+  const desc=Number(document.getElementById('nv-desc').value)||0;
+  const total=qtd*preco*(1-desc/100);
+  const lucro=total-(c.base*qtd);
+
+  document.getElementById('nv-preview').innerHTML=`
+    <div class="mc"><div class="ml">Total</div><div class="mv">${brl(total)}</div></div>
+    <div class="mc"><div class="ml">Lucro</div><div class="mv" style="color:var(--color-text-success)">${brl(lucro)}</div></div>
+    <div class="mc"><div class="ml">Estoque após</div><div class="mv" style="${(p.qtd-qtd)<0?'color:var(--color-text-danger)':''}">${p.qtd-qtd}</div></div>`;
+
+  document.getElementById('nv-estoque-info').innerHTML=`
+    <b>${p.nome}</b> <span class="badge">${p.categoria}</span><br>Estoque atual: <b>${p.qtd}</b> unid.<br>
+    Preço sugerido (com margem/promo padrão): <b>${brl(c.preco)}</b><br>
+    ${(p.qtd-qtd)<0?'<span style="color:var(--color-text-danger)">⚠ Quantidade maior que o estoque disponível!</span>':''}`;
+}
+document.addEventListener('input',e=>{
+  if(e.target.id==='nv-preco'||e.target.id==='nv-desc')e.target.dataset.touched='1';
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='nv-prod'){
+    document.getElementById('nv-preco').removeAttribute('data-touched');
+    document.getElementById('nv-desc').removeAttribute('data-touched');
+    previewVenda();
+  }
+});
+async function salvarVenda(){
+  const cod=document.getElementById('nv-prod').value;
+  const p=produtos.find(x=>x.cod===cod);if(!p)return;
+  const qtd=Number(document.getElementById('nv-qtd').value)||0;
+  const preco=Number(document.getElementById('nv-preco').value)||0;
+  const desc=Number(document.getElementById('nv-desc').value)||0;
+  if(qtd<=0){toast('t-dash','Quantidade inválida.',false);goTab('dashboard');return;}
+  if(qtd>p.qtd){toast('t-dash','Estoque insuficiente para essa venda.',false);goTab('dashboard');return;}
+  const novaVenda={data:document.getElementById('nv-data').value||hojeStr(),cod:p.cod,produto:p.nome,qtd,preco,desc,obs:document.getElementById('nv-obs').value};
+  vendas.push(novaVenda);
+  p.qtd-=qtd;
+  document.getElementById('nv-qtd').value=1;
+  document.getElementById('nv-preco').removeAttribute('data-touched');
+  document.getElementById('nv-desc').removeAttribute('data-touched');
+  document.getElementById('nv-obs').value='';
+  goTab('dashboard');
+  if(conectado){
+    const r=await gsPost({action:'addVenda',venda:novaVenda});
+    toast('t-dash',r&&r.ok?`Venda de "${p.nome}" registrada na planilha!`:`Venda registrada localmente, mas houve erro ao salvar na planilha.`,r&&r.ok);
+  }else{
+    toast('t-dash',`Venda de "${p.nome}" registrada — modo demonstração.`,true);
+  }
+}
+
+// ================= VENDAS (lista) =================
+function renderVendas(modo){
+  if(!modo)modo=document.querySelector('[data-vt].on')?document.querySelector('[data-vt].on').dataset.vt:'todas';
+  const tb=document.getElementById('tb-vendas');tb.innerHTML='';
+  let lista=[...vendas].sort((a,b)=>parseData(b.data)-parseData(a.data));
+  if(modo==='saidas')lista=lista.filter(v=>{const p=produtos.find(x=>x.cod===v.cod);return p&&p.qtd<=2;});
+  lista.forEach(v=>{
+    const c=vendaCalc(v);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${v.data}</td><td title="${v.produto}">${v.produto}</td><td>${v.qtd}</td><td>${brl(v.preco)}</td><td>${pct(v.desc||0)}</td><td>${brl(c.total)}</td><td style="color:var(--color-text-success)">${brl(c.lucro)}</td><td>${v.obs||''}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!lista.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--color-text-tertiary)">Nenhuma venda encontrada.</td></tr>';}
+}
+
+// ================= RELATORIO =================
+function renderRelatorio(){
+  const tb=document.getElementById('tb-relatorio');tb.innerHTML='';
+  produtos.forEach(p=>{
+    const vs=vendas.filter(v=>v.cod===p.cod);
+    const qtd=vs.reduce((a,v)=>a+v.qtd,0);
+    const fat=vs.reduce((a,v)=>a+vendaCalc(v).total,0);
+    const luc=vs.reduce((a,v)=>a+vendaCalc(v).lucro,0);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td title="${p.nome}">${p.nome}</td><td><span class="badge">${p.categoria}</span></td><td>${vs.length}</td><td>${qtd}</td><td>${brl(fat)}</td><td style="color:var(--color-text-success)">${brl(luc)}</td><td>${fat>0?pct((luc/fat)*100):'—'}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ================= INIT =================
+renderDash();
+</script>
+
+<!-- ===================== AGENTE FLUTUANTE ===================== -->
+<style>
+#chat-btn{
+  position:fixed;bottom:20px;right:20px;width:52px;height:52px;
+  border-radius:50%;border:none;cursor:pointer;z-index:100;
+  background:linear-gradient(135deg,#3a3f4b 0%,#23262e 60%,#454b59 100%);
+  color:#f3f4f6;font-size:22px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 18px rgba(0,0,0,0.22);transition:transform .2s,box-shadow .2s;
+}
+#chat-btn:hover{transform:scale(1.08);box-shadow:0 6px 24px rgba(0,0,0,0.3)}
+#chat-btn .badge-notif{
+  position:absolute;top:-3px;right:-3px;background:#c0392b;color:#fff;
+  border-radius:99px;font-size:10px;padding:1px 5px;font-weight:700;display:none;
+}
+#chat-window{
+  position:fixed;bottom:82px;right:20px;width:340px;max-height:520px;
+  background:#ffffff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,0.18);
+  display:none;flex-direction:column;z-index:101;overflow:hidden;
+  border:1px solid #e6e9ed;
+}
+#chat-window.open{display:flex}
+#chat-header{
+  background:linear-gradient(135deg,#3a3f4b 0%,#23262e 60%,#454b59 100%);
+  padding:12px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+#chat-header .avatar{
+  width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#cfd5dd,#9aa3b0);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
+}
+#chat-header .info{flex:1}
+#chat-header .info .name{color:#f3f4f6;font-weight:600;font-size:13px}
+#chat-header .info .status{color:#9aa3b0;font-size:11px}
+#chat-close{background:none;border:none;color:#9aa3b0;cursor:pointer;font-size:18px;padding:2px 4px}
+#chat-msgs{
+  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;
+  min-height:0;
+}
+.msg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:12.5px;line-height:1.5;word-break:break-word}
+.msg.bot{background:#f4f5f7;color:#2b2e36;border-bottom-left-radius:4px;align-self:flex-start}
+.msg.user{background:linear-gradient(135deg,#3a3f4b,#23262e);color:#f3f4f6;border-bottom-right-radius:4px;align-self:flex-end}
+.msg.typing{background:#f4f5f7;align-self:flex-start;color:#9aa3b0;font-style:italic}
+#chat-input-row{
+  display:flex;gap:8px;padding:10px 12px;border-top:1px solid #e6e9ed;flex-shrink:0;background:#fff;
+}
+#chat-input{
+  flex:1;border:1px solid #d6dae1;border-radius:10px;padding:7px 10px;
+  font-size:12px;font-family:inherit;resize:none;outline:none;
+  transition:border-color .15s;max-height:80px;min-height:34px;
+}
+#chat-input:focus{border-color:#9aa3b0}
+#chat-send{
+  width:34px;height:34px;border-radius:10px;border:none;cursor:pointer;flex-shrink:0;
+  background:linear-gradient(135deg,#3a3f4b,#23262e);color:#f3f4f6;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:filter .15s;
+}
+#chat-send:hover{filter:brightness(1.2)}
+#chat-suggestions{
+  display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 0;
+}
+.sugg{
+  font-size:11px;padding:4px 9px;border-radius:99px;border:1px solid #d6dae1;
+  background:#f4f5f7;color:#6b6862;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.sugg:hover{background:#2b2e36;color:#f3f4f6;border-color:#2b2e36}
+@media(max-width:400px){
+  #chat-window{width:calc(100vw - 24px);right:12px;bottom:76px}
+}
+</style>
+
+<button id="chat-btn" onclick="toggleChat()" title="Assistente do App">
+  💬
+  <span class="badge-notif" id="chat-notif">1</span>
+</button>
+
+<div id="chat-window">
+  <div id="chat-header">
+    <div class="avatar">◆</div>
+    <div class="info">
+      <div class="name">Assistente Prata</div>
+      <div class="status">Tire suas dúvidas sobre o app</div>
+    </div>
+    <button id="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div id="chat-msgs"></div>
+  <div id="chat-suggestions">
+    <span class="sugg" onclick="sendSugg(this)">Como registrar uma venda?</span>
+    <span class="sugg" onclick="sendSugg(this)">Como funciona o lucro garantido?</span>
+    <span class="sugg" onclick="sendSugg(this)">Como conectar ao Google Sheets?</span>
+    <span class="sugg" onclick="sendSugg(this)">Qual margem usar?</span>
+  </div>
+  <div id="chat-input-row">
+    <textarea id="chat-input" placeholder="Digite sua dúvida..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+    <button id="chat-send" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `Você é a Assistente Prata, uma especialista no App Prata — Controle, um sistema de gestão de estoque e vendas para lojas de joias de prata. Responda de forma clara, objetiva e amigável em português brasileiro. Use emojis com moderação.
+
+SOBRE O APP:
+O App Prata — Controle é um arquivo HTML que funciona no navegador, conectado ao Google Sheets via Apps Script.
+
+ABAS DO APP:
+- Dashboard: visão geral com faturamento, lucro, meta do mês, previsão, mais vendidos, produtos parados, capital parado, gráfico dos últimos 6 meses, comparativo com mês anterior.
+- Estoque: lista todos os produtos com qtd, custo, margem, promoção, preço de venda e lucro garantido. Tem filtro por categoria e padrão geral de margem/promoção.
+- Entrada de Estoque: duas funções — "Cadastrar produto novo" (formulário completo com pré-visualização de preço) e "Repor estoque existente" (adiciona quantidade a produto já cadastrado).
+- Vendas: histórico completo de vendas. Dois modos: "Todas as vendas" e "Saídas de estoque".
+- Nova Venda: registra uma venda, baixa o estoque automaticamente, salva na planilha.
+- Relatório: desempenho por produto (faturamento, lucro, margem, qtd vendida).
+- Config: campo para colar a URL do Apps Script e conectar ao Google Sheets.
+
+FÓRMULA DE PRECIFICAÇÃO:
+- Base = Custo de compra + Gastos + Insumos (embalagem)
+- Preço c/ promoção = Base × (1 + Margem%) — esse é o valor mínimo que você precisa receber
+- Preço de venda (etiqueta) = Preço c/promoção ÷ (1 − Promoção%) — sobe para absorver o desconto
+- Lucro garantido = Preço c/promoção − Base
+- Com Promoção = 0%: Preço de venda = Preço c/promoção
+- A lógica da promoção: o preço de etiqueta SOBE para que, após o desconto, você ainda receba o Preço c/promoção e mantenha sua margem intacta.
+
+CATEGORIAS DE INSUMO (embalagem):
+- Sem insumo: R$ 0,00
+- Pequena: R$ 3,60
+- Média: R$ 5,70
+- Grande: R$ 9,40
+
+MARGEM RECOMENDADA PARA PRATA:
+- Peças simples: 80-100% sobre a base
+- Peças com pedra/zircônia: 100-120%
+- Conjuntos e premium: 120-150%
+- Para repor o produto e ter lucro no caixa, use no mínimo 100% (markup)
+
+GOOGLE SHEETS:
+- Conexão via Apps Script (URL começa com https://script.google.com/macros/s/)
+- Aba "Controle de Estoque": Nome|Código|Fornecedor|Categoria|Qtd|Custo uni|Gastos|Insumos|Margem%|Promoção%|Preço de Venda|Preço c/Promo|Lucro Garantido
+- Aba "Venda": Data|Produto|Código|Qtd|Preço uni|Desconto%|Total|Lucro|Obs
+
+PARA USAR NO CELULAR:
+- Baixar o arquivo app_prata.html
+- Abrir no Chrome ou Safari
+- Menu → "Adicionar à tela inicial"
+- Vira ícone na tela, abre em tela cheia como um app
+
+MODO DEMONSTRAÇÃO:
+- O aviso "Modo demonstração" aparece quando não está conectado ao Google Sheets
+- Os produtos já vêm cadastrados no arquivo, mas vendas não são salvas na planilha
+
+Responda apenas sobre o app e sobre gestão de joalheria/prata. Se perguntarem algo fora desse tema, redirecione gentilmente para dúvidas sobre o app.`;
+
+let chatHistory = [];
+let chatOpen = false;
+let chatGreeted = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chat-window').classList.toggle('open', chatOpen);
+  document.getElementById('chat-notif').style.display = 'none';
+  if (chatOpen && !chatGreeted) {
+    chatGreeted = true;
+    setTimeout(() => addMsg('bot', 'Olá! 👋 Sou a Assistente Prata. Pode me perguntar qualquer coisa sobre o app — como registrar vendas, configurar margens, conectar à planilha, entender o lucro garantido... é só perguntar!'), 300);
+  }
+  if (chatOpen) {
+    setTimeout(() => document.getElementById('chat-input').focus(), 100);
+  }
+}
+
+function addMsg(role, text) {
+  const el = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  return div;
+}
+
+function sendSugg(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  document.getElementById('chat-suggestions').style.display = 'none';
+  sendMsg();
+}
+
+async function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('chat-suggestions').style.display = 'none';
+
+  addMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+
+  const typing = addMsg('typing', 'Digitando...');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: chatHistory,
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Desculpe, não consegui responder agora. Tente novamente.';
+    typing.remove();
+    addMsg('bot', reply);
+    chatHistory.push({ role: 'assistant', content: reply });
+    // keep history manageable
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+  } catch (e) {
+    typing.remove();
+    addMsg('bot', 'Erro de conexão. Verifique sua internet e tente novamente.');
+  }
+}
+
+// show notification badge after 3s if chat not opened
+setTimeout(() => {
+  if (!chatOpen) {
+    document.getElementById('chat-notif').style.display = 'block';
+  }
+}, 3000);
+</script>
+</body>
+</html>
