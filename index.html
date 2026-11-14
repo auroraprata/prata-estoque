@@ -278,7 +278,7 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
   <div class="tw"><table>
     <thead><tr>
       <th style="width:130px">Produto</th><th style="width:55px">Código</th><th style="width:80px">Categoria</th><th style="width:40px">Qtd</th>
-      <th style="width:60px">Custo</th><th style="width:60px">Insumo</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
+      <th style="width:60px">Custo</th><th style="width:60px">Insumo</th><th style="width:65px">Mínimo</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
       <th style="width:70px">Preço</th><th style="width:75px">Lucro gar.</th><th style="width:50px">Ações</th>
     </tr></thead>
     <tbody id="tb-estoque"></tbody>
@@ -893,7 +893,7 @@ function renderEstoque(){
     const promoBadge=p.ovp?`<span class="badge custom">${pct(c.promo)}</span>`:`${pct(c.promo)}`;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td title="${p.nome}">${p.nome}</td><td>${p.cod}</td><td><span class="badge">${p.categoria}</span></td><td style="${p.qtd<=0?'color:var(--color-text-danger);font-weight:500':''}">${p.qtd}</td>
-      <td>${brl(p.custo)}</td><td>${brl(p.insumo)}</td><td>${margBadge}</td><td>${promoBadge}</td>
+      <td>${brl(p.custo)}</td><td>${brl(p.insumo)}</td><td title="Custo + gastos + insumo: vendendo por isso o lucro é zero">${brl(c.base)}</td><td>${margBadge}</td><td>${promoBadge}</td>
       <td>${brl(c.preco)}</td><td>${brl(c.lucroGarantido)}</td>
       <td><button class="btn btn-sm" onclick="abrirEdicao('${p.cod}')"><span aria-hidden="true">✏</span></button></td>`;
     tb.appendChild(tr);
