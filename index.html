@@ -278,7 +278,7 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
   <div class="tw"><table>
     <thead><tr>
       <th style="width:130px">Produto</th><th style="width:55px">Código</th><th style="width:80px">Categoria</th><th style="width:40px">Qtd</th>
-      <th style="width:60px">Custo</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
+      <th style="width:60px">Custo</th><th style="width:60px">Insumo</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
       <th style="width:70px">Preço</th><th style="width:75px">Lucro gar.</th><th style="width:50px">Ações</th>
     </tr></thead>
     <tbody id="tb-estoque"></tbody>
@@ -317,9 +317,8 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
         <div class="field"><label>Categoria de insumo</label>
           <select id="np-insumo" onchange="previewNovo()">
             <option value="0">Sem insumo</option>
-            <option value="3.60">Pequena (R$ 3,60)</option>
-            <option value="5.70">Média (R$ 5,70)</option>
-            <option value="9.40">Grande (R$ 9,40)</option>
+            <option value="6">Peça pequena (R$ 6,00)</option>
+            <option value="8.5" selected>Padrão (R$ 8,50)</option>
           </select>
         </div>
         <div class="grid2">
@@ -458,9 +457,8 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
     <div class="field"><label>Insumo</label>
       <select id="ed-insumo" onchange="previewEdit()">
         <option value="0">Sem insumo</option>
-        <option value="3.60">Pequena (R$ 3,60)</option>
-        <option value="5.70">Média (R$ 5,70)</option>
-        <option value="9.40">Grande (R$ 9,40)</option>
+        <option value="6">Peça pequena (R$ 6,00)</option>
+        <option value="8.5">Padrão (R$ 8,50)</option>
       </select>
     </div>
     <div class="grid2">
@@ -895,7 +893,7 @@ function renderEstoque(){
     const promoBadge=p.ovp?`<span class="badge custom">${pct(c.promo)}</span>`:`${pct(c.promo)}`;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td title="${p.nome}">${p.nome}</td><td>${p.cod}</td><td><span class="badge">${p.categoria}</span></td><td style="${p.qtd<=0?'color:var(--color-text-danger);font-weight:500':''}">${p.qtd}</td>
-      <td>${brl(p.custo)}</td><td>${margBadge}</td><td>${promoBadge}</td>
+      <td>${brl(p.custo)}</td><td>${brl(p.insumo)}</td><td>${margBadge}</td><td>${promoBadge}</td>
       <td>${brl(c.preco)}</td><td>${brl(c.lucroGarantido)}</td>
       <td><button class="btn btn-sm" onclick="abrirEdicao('${p.cod}')"><span aria-hidden="true">✏</span></button></td>`;
     tb.appendChild(tr);
@@ -911,7 +909,10 @@ function abrirEdicao(cod){
   document.getElementById('ed-qtd').value=p.qtd;
   document.getElementById('ed-custo').value=p.custo;
   document.getElementById('ed-gastos').value=p.gastos;
-  document.getElementById('ed-insumo').value=p.insumo;
+  const selIns=document.getElementById('ed-insumo');
+  const vIns=String(Number(p.insumo)||0);
+  if(![...selIns.options].some(o=>o.value===vIns)){const o=document.createElement('option');o.value=vIns;o.textContent='Atual ('+brl(Number(vIns))+')';selIns.appendChild(o);}
+  selIns.value=vIns;
   document.getElementById('ed-ovm').checked=p.ovm;
   document.getElementById('ed-marg').value=p.ovm&&p.marg!=null?p.marg:padMarg;
   document.getElementById('ed-marg').disabled=!p.ovm;
@@ -1000,7 +1001,7 @@ async function salvarNovoProduto(){
   document.getElementById('np-nome').value='';document.getElementById('np-cod').value='';
   document.getElementById('np-forn').value='';document.getElementById('np-qtd').value=1;
   document.getElementById('np-custo').value=0;document.getElementById('np-gastos').value=0;
-  document.getElementById('np-insumo').value='0';
+  document.getElementById('np-insumo').value='8.5';
   document.getElementById('np-ovm').checked=false;document.getElementById('np-ovp').checked=false;
   previewNovo();
   document.getElementById('cat-filter-estoque').innerHTML='';
