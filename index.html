@@ -446,7 +446,8 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
   </div>
   <div class="sh" style="margin-top:16px">
     <span class="st">Lista para o estande (<span id="cp-cnt">0</span>)</span>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="cp-lista-sel" class="btn-sm" style="padding:4px 6px" onchange="renderPromocoes(true)"></select>
       <button class="btn btn-sm" onclick="copiarListaWhats()">Copiar para WhatsApp</button>
       <button class="btn btn-sm" onclick="imprimirLista()">Imprimir lista</button>
     </div>
@@ -1020,19 +1021,33 @@ function updatePadrao(){
 let campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pecas:{},pecasNome:{},pausada:false};
 try{const c=JSON.parse(localStorage.getItem('prata_campanha_cfg')||'null');if(c)campanha=Object.assign(campanha,c);
     else{const old=Number(localStorage.getItem('prata_campanha'))||0;if(old)campanha.desc=old;}}catch(e){}
+function migrarFixas(){
+  if(campanha.migFixa1)return;campanha.fixaEdit=campanha.fixaEdit||{};
+  PROMOS_FIXAS.forEach(f=>{Object.keys(f.pecas).forEach(cod=>{
+    const v=campanha.pecas&&campanha.pecas[cod];
+    if(v!==undefined&&v!==''&&v!==null){(campanha.fixaEdit[f.id]=campanha.fixaEdit[f.id]||{})[cod]=Number(v)||0;delete campanha.pecas[cod];}
+  });});
+  campanha.migFixa1=true;gravarCampanha();
+}
 function gravarCampanha(){try{localStorage.setItem('prata_campanha_cfg',JSON.stringify(campanha));}catch(e){}}
 function hojeISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function isoParaBR(iso){if(!iso)return'';const[a,m,d]=iso.split('-');return`${d}/${m}/${a}`;}
 // Promoções fixas que vêm junto com o app (valem em todos os aparelhos, nas datas abaixo)
 const PROMOS_FIXAS=[{id:'esquenta-black-2026',nome:'Esquenta Black',ini:'2026-11-23',fim:'2026-11-30',pecas:{"P0113": 53.526678, "P0114": 45.714286, "P0116": 42.647059, "P0117": 48.0, "P0118": 44.230769, "P0119": 35.555555, "P0120": 12.621359, "P0121": 31.485758, "P0122": 50.625, "P0123": 37.096774, "P0124": 51.829268, "P0125": 47.272727, "P0126": 27.368421, "P0128": 55.384615, "P0129": 50.27933, "P0130": 45.494994, "P0131": 44.206009, "P0132": 47.272727, "P0133": 40.0, "P0134": 50.0, "P0135": 44.206009, "P0137": 48.0, "P0138": 55.384615, "P0139": 41.988398, "P0141": 60.416667, "P0143": 50.0, "P0144": 48.421053, "P0145": 54.117647, "P0146": 29.591837, "P0147": 29.899857, "P0148": 47.272727, "P0149": 59.722222, "P0150": 52.380952, "P0153": 36.645548, "P0155": 48.0, "P0156": 38.742343, "P0157": 35.526316, "P0158": 50.0, "P0159": 34.666667, "P0160": 40.0, "P0161": 31.538462, "P0162": 56.111111, "P0163": 37.894737, "P0165": 62.332771, "P0166": 36.111111, "P0167": 29.761905, "P0168": 9.210526, "P0169": 44.206009, "P0170": 51.188986, "P0171": 38.673342, "P0172": 45.494994, "P0173": 28.048781, "P0174": 30.833333, "P0175": 58.51216, "P0177": 35.555555, "P0178": 35.555555, "P0179": 44.94382, "P0180": 48.0, "P0181": 47.272727, "P0182": 41.883768, "P0183": 46.296296, "P0184": 53.225806, "P0185": 53.225806, "P0187": 34.666667, "P0188": 52.439024, "P0189": 40.0, "P0190": 37.894737, "P0195": 36.383131, "P0198": 30.588235, "P0199": 48.0, "P0201": 20.821918, "P0202": 34.666667, "P0203": 51.585977, "P0204": 48.0, "P0205": 37.179487, "P0206": 36.363636, "P0207": 40.0, "P0208": 48.0, "P0209": 50.0, "P0338": 18.823529, "P0339": 68.328055, "P0340": 44.230769}}];
+function fixaEd(f){return (campanha.fixaEdit&&campanha.fixaEdit[f.id])||{};}
+function fixaVal(f,cod){const e=fixaEd(f);if(cod in e)return Math.min(99,Math.max(0,Number(e[cod])||0));return Number(f.pecas[cod])||0;}
+function fixaMembro(p){for(const f of PROMOS_FIXAS){if(p.cod in f.pecas||p.cod in fixaEd(f))return f;}return null;}
+function fixaPecas(f){const cods=new Set([...Object.keys(f.pecas),...Object.keys(fixaEd(f))]);return [...cods].filter(c=>fixaVal(f,c)>0);}
 function fixaAtiva(f){const h=hojeISO();return!(f.ini&&h<f.ini)&&!(f.fim&&h>f.fim);}
-function fixaFor(p){for(const f of PROMOS_FIXAS){const d=f.pecas[p.cod];if(d>0&&fixaAtiva(f))return{d:Math.min(99,d),f};}return null;}
-function fixaQualquer(p){for(const f of PROMOS_FIXAS){const d=f.pecas[p.cod];if(d>0)return{d,f};}return null;}
+function fixaFor(p){for(const f of PROMOS_FIXAS){const d=fixaVal(f,p.cod);if(d>0&&fixaAtiva(f))return{d:Math.min(99,d),f};}return null;}
+function fixaQualquer(p){for(const f of PROMOS_FIXAS){const d=fixaVal(f,p.cod);if(d>0)return{d,f};}return null;}
+function fixaAberta(f){return !(f.fim&&hojeISO()>f.fim);}
+migrarFixas();
 // Desconto geral/categoria: vale só nas datas da campanha. Desconto por peça: vale sempre (até ser tirado).
 // "Pausar" desliga tudo.
 function temGeral(){return (Number(campanha.desc)||0)>0||Object.values(campanha.cats||{}).some(v=>Number(v)>0);}
 function temPecas(){return Object.values(campanha.pecas||{}).some(v=>Number(v)>0);}
-function temFixaAtiva(){return PROMOS_FIXAS.some(f=>fixaAtiva(f)&&Object.keys(f.pecas).length);}
+function temFixaAtiva(){return PROMOS_FIXAS.some(f=>fixaAtiva(f)&&fixaPecas(f).length);}
 function campanhaTemDesconto(){return temGeral()||temPecas();}
 function geralEstado(){ // 'off' | 'futura' | 'ativa' | 'encerrada'
   if(!temGeral())return'off';
@@ -1072,6 +1087,12 @@ function promoNomeFor(p){
 }
 function setPecaDesc(cod,val){
   campanha.pecas=campanha.pecas||{};
+  const pr=produtos.find(x=>x.cod===cod),fm=pr&&!pecaTem(pr)&&fixaMembro(pr);
+  if(fm){ // peça do Esquenta: muda o desconto do Esquenta (vale só nas datas dele). Vazio ou 0 = tira do Esquenta
+    campanha.fixaEdit=campanha.fixaEdit||{};const e=campanha.fixaEdit[fm.id]=campanha.fixaEdit[fm.id]||{};
+    e[cod]=val===''?0:Math.min(99,Math.max(0,Number(val)||0));
+    gravarCampanha();renderEstoque();return;
+  }
   const d=Number(val);
   if(val==='')delete campanha.pecas[cod];            // vazio: volta a seguir a promoção fixa / campanha
   else campanha.pecas[cod]=Math.min(99,Math.max(0,d||0)); // 0 = tirar a promoção desta peça
@@ -1079,7 +1100,8 @@ function setPecaDesc(cod,val){
 }
 function setPecaNome(cod,val){
   campanha.pecasNome=campanha.pecasNome||{};
-  if(val.trim())campanha.pecasNome[cod]=val.trim();else delete campanha.pecasNome[cod];
+  const pr=produtos.find(x=>x.cod===cod),fm=pr&&fixaMembro(pr);
+  if(val.trim()&&!(fm&&val.trim()===fm.nome))campanha.pecasNome[cod]=val.trim();else delete campanha.pecasNome[cod];
   gravarCampanha();renderEstoque();
 }
 function updateCampanha(){
@@ -1089,14 +1111,27 @@ function updateCampanha(){
 function escAttr(t){return String(t||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function campInputs(p){
   const pd=campanha.pecas&&campanha.pecas[p.cod];
-  const fx=campanha.pausada?null:fixaFor(p);
-  const fxq=fixaQualquer(p);
-  const gd=campanha.pausada?0:(fx?Number(fx.d.toFixed(2)):geralDescFor(p));
+  const fm=pecaTem(p)?null:fixaMembro(p);
   const nomeP=(campanha.pecasNome&&campanha.pecasNome[p.cod])||'';
-  const phNome=fx?fx.f.nome:(geralDescFor(p)?(campanha.nome||'Campanha'):(fxq?`${fxq.f.nome} (${isoParaBR(fxq.f.ini).slice(0,5)}–${isoParaBR(fxq.f.fim).slice(0,5)})`:'Ex.: Peça parada'));
-  const inputs=`<td><input type="number" min="0" max="99" step="1" value="${pd!==undefined?pd:''}" placeholder="${gd?gd:(fxq&&!campanha.pausada?Number(fxq.d.toFixed(2))+' *':'—')}" style="width:60px;padding:3px 5px" title="${fxq?`Na ${fxq.f.nome} (${isoParaBR(fxq.f.ini)} a ${isoParaBR(fxq.f.fim)}): ${pct(fxq.d)}. `:''}Digite para mudar só nesta peça; 0 tira a promoção; vazio volta ao padrão." onchange="setPecaDesc('${p.cod}',this.value)"></td>
-    <td><input type="text" value="${escAttr(nomeP)}" placeholder="${escAttr(phNome)}" style="width:115px;padding:3px 5px" onchange="setPecaNome('${p.cod}',this.value)"></td>`;
-  return inputs;
+  let val='',ph='—',tag='',nomeVal=nomeP,phNome='Ex.: Peça parada',tit='Digite o desconto só desta peça; 0 tira a promoção; apague para voltar ao padrão.';
+  if(fm){
+    const d=fixaVal(fm,p.cod);const per=`${isoParaBR(fm.ini).slice(0,5)}–${isoParaBR(fm.fim).slice(0,5)}`;
+    val=d>0?Number(d.toFixed(2)):'';
+    const st=campanha.pausada?'pausada':fixaAtiva(fm)?'ativa':(fixaAberta(fm)?'agendada':'terminou');
+    tag=`<div style="font-size:10px;color:${st==='ativa'?'var(--color-text-success)':'var(--color-text-secondary)'};margin-top:2px">${d>0?fm.nome+' '+per+' · '+st:'fora do '+fm.nome}</div>`;
+    if(d>0&&!nomeP)nomeVal=fm.nome;
+    phNome=fm.nome;
+    tit=`Desconto desta peça no ${fm.nome} (${isoParaBR(fm.ini)} a ${isoParaBR(fm.fim)}). Só vale nessas datas. Apague ou ponha 0 para tirar a peça do ${fm.nome}.`;
+  }else{
+    const fx=campanha.pausada?null:fixaFor(p);
+    const gd=campanha.pausada?0:geralDescFor(p);
+    val=pd!==undefined?pd:'';
+    if(gd)ph=gd;
+    if(gd)phNome=campanha.nome||'Campanha';
+    if(pd!==undefined&&Number(pd)>0)tag=`<div style="font-size:10px;color:var(--color-text-success);margin-top:2px">vale agora</div>`;
+  }
+  return `<td><input type="number" min="0" max="99" step="1" value="${val}" placeholder="${ph}" style="width:60px;padding:3px 5px" title="${escAttr(tit)}" onchange="setPecaDesc('${p.cod}',this.value)">${tag}</td>
+    <td><input type="text" value="${escAttr(nomeVal)}" placeholder="${escAttr(phNome)}" style="width:115px;padding:3px 5px" onchange="setPecaNome('${p.cod}',this.value)"></td>`;
 }
 function campPrices(c,p){
   const d=campDescFor(p);
@@ -1148,7 +1183,7 @@ function pausarCampanha(){
   toast('t-dash',campanha.pausada?'Campanha pausada: preços normais até você retomar.':'Campanha retomada.',true);
 }
 function encerrarCampanha(){
-  campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pecas:campanha.pecas||{},pecasNome:campanha.pecasNome||{},pausada:false};gravarCampanha();
+  campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pecas:campanha.pecas||{},pecasNome:campanha.pecasNome||{},fixaEdit:campanha.fixaEdit||{},migFixa1:true,pausada:false};gravarCampanha();
   ['cp-nome','cp-ini','cp-fim','cp-desc'].forEach(id=>document.getElementById(id).value='');
   renderPromocoes();toast('t-dash',temPecas()?'Campanha encerrada. Os descontos por peça continuam — tire no ✕ se quiser.':'Campanha encerrada. Os preços voltaram ao normal.',true);
 }
@@ -1183,11 +1218,26 @@ function renderPecasPromo(){
       <button class="btn btn-sm" onclick="removerPecaPromo('${cod}')" title="Tirar o desconto desta peça">✕</button></div>`;
   }).join('');
 }
+function listaSel(){
+  const el=document.getElementById('cp-lista-sel');
+  const opts=[{v:'atual',t:'Promoções valendo agora'}].concat(PROMOS_FIXAS.filter(fixaAberta).map(f=>({v:f.id,t:`${f.nome} (${isoParaBR(f.ini).slice(0,5)} a ${isoParaBR(f.fim).slice(0,5)})`})));
+  const cur=el.value||(opts[1]?opts[1].v:'atual');
+  el.innerHTML=opts.map(o=>`<option value="${o.v}">${o.t}</option>`).join('');
+  el.value=opts.some(o=>o.v===cur)?cur:'atual';
+  return PROMOS_FIXAS.find(f=>f.id===el.value)||null;
+}
 function listaPromo(){
-  return produtos.filter(p=>p.qtd>0&&campDescFor(p)>0).map(p=>{
-    const c=calcProduto(p),d=campDescFor(p),por=c.preco*(1-d/100);
+  const f=PROMOS_FIXAS.find(x=>x.id===(document.getElementById('cp-lista-sel').value));
+  const descOf=f?(p=>pecaTem(p)?0:fixaVal(f,p.cod)):campDescFor;
+  return produtos.filter(p=>p.qtd>0&&descOf(p)>0).map(p=>{
+    const c=calcProduto(p),d=Math.min(99,descOf(p)),por=c.preco*(1-d/100);
     return{p,c,d,de:c.preco,por,lucro:por-c.base};
   }).sort((a,b)=>a.p.categoria.localeCompare(b.p.categoria)||a.p.nome.localeCompare(b.p.nome));
+}
+function listaTitulo(){
+  const f=PROMOS_FIXAS.find(x=>x.id===(document.getElementById('cp-lista-sel').value));
+  if(f)return{nome:f.nome,ini:f.ini,fim:f.fim};
+  return{nome:campanha.nome||'Promoção Aurora Prata',ini:campanha.ini,fim:campanha.fim};
 }
 function renderPromocoes(doForm){
   if(!doForm){
@@ -1209,18 +1259,19 @@ function renderPromocoes(doForm){
   const bp=document.getElementById('cp-pausar');
   bp.textContent=campanha.pausada?'▶ Retomar':'⏸ Pausar';bp.disabled=!campanhaTemDesconto()&&!temFixaAtiva()&&!campanha.pausada;
   const h=hojeISO();
-  const fixas=PROMOS_FIXAS.map(f=>{const n=Object.keys(f.pecas).length;const st=campanha.pausada?'<span style="color:#b26b00">pausada</span>':(f.ini&&h<f.ini)?'agendada':(f.fim&&h>f.fim)?'terminou':'<span style="color:var(--color-text-success)">ativa</span>';
-    return`<b>${f.nome}</b> (${isoParaBR(f.ini)} a ${isoParaBR(f.fim)}): ${st} · ${n} peças com preço definido. Vale em todos os aparelhos.`;}).join('<br>');
+  const fixas=PROMOS_FIXAS.map(f=>{const n=fixaPecas(f).length;const st=campanha.pausada?'<span style="color:#b26b00">pausada</span>':(f.ini&&h<f.ini)?'agendada':(f.fim&&h>f.fim)?'terminou':'<span style="color:var(--color-text-success)">ativa</span>';
+    return`<b>${f.nome}</b> (${isoParaBR(f.ini)} a ${isoParaBR(f.fim)}): ${st} · ${n} peças. Escolha a lista dele abaixo para ver De/Por. Mudanças que você fizer nas peças dele ficam salvas neste aparelho.`;}).join('<br>');
   document.getElementById('cp-status').innerHTML=(fixas?fixas+'<hr style="border:none;border-top:1px solid var(--color-border-tertiary,#ddd);margin:8px 0">':'')+msg+'<br><span style="font-size:11px;color:var(--color-text-secondary)">A campanha acima (nome, datas e descontos que você coloca aqui) fica salva neste aparelho.</span>';
 
   // lista
+  const fSel=listaSel();
   const L=listaPromo();
   document.getElementById('cp-cnt').textContent=L.length;
   const tb=document.getElementById('tb-promo');
   tb.innerHTML=L.length?L.map(x=>{
     const cor=x.lucro<0?'var(--color-text-danger)':(x.lucro+0.005<x.c.lucroGarantido?'#b26b00':'var(--color-text-success)');
     return`<tr><td title="${x.p.nome}">${x.p.nome}</td><td><span class="badge">${x.p.categoria}</span></td><td>${x.p.qtd}</td><td>${pct(x.d)}</td><td style="text-decoration:line-through;color:var(--color-text-secondary)">${brl(x.de)}</td><td><b>${brl(x.por)}</b></td><td style="color:${cor};font-weight:500">${brlS(x.lucro)}</td></tr>`;
-  }).join(''):`<tr><td colspan="7" style="text-align:center;color:var(--color-text-secondary);padding:18px">${est==='ativa'?'Nenhuma peça em estoque com desconto.':est==='pausada'?'Campanha pausada. Toque em Retomar para ver a lista.':'A lista aparece quando a campanha estiver ativa.'}</td></tr>`;
+  }).join(''):`<tr><td colspan="7" style="text-align:center;color:var(--color-text-secondary);padding:18px">${fSel?'Nenhuma peça em estoque nessa promoção.':est==='ativa'?'Nenhuma peça em estoque com desconto.':est==='pausada'?'Campanha pausada. Toque em Retomar para ver a lista.':'A lista aparece quando a campanha estiver ativa.'}</td></tr>`;
   const prej=L.filter(x=>x.lucro<0).length, come=L.filter(x=>x.lucro>=0&&x.lucro+0.005<x.c.lucroGarantido).length;
 
   // resumo das vendas no período
@@ -1243,7 +1294,8 @@ function renderPromocoes(doForm){
 }
 function copiarListaWhats(){
   const L=listaPromo();if(!L.length){toast('t-dash','A lista está vazia.',false);return;}
-  const titulo=`✨ *${campanha.nome||'Promoção Aurora Prata'}*`+(campanha.ini||campanha.fim?`\n${campanha.ini?isoParaBR(campanha.ini):''}${campanha.fim?' a '+isoParaBR(campanha.fim):''}`:'');
+  const T=listaTitulo();
+  const titulo=`✨ *${T.nome}*`+(T.ini||T.fim?`\n${T.ini?isoParaBR(T.ini):''}${T.fim?' a '+isoParaBR(T.fim):''}`:'');
   const txt=titulo+'\n\n'+L.map(x=>`• ${x.p.nome}\n  de ~${brl(x.de)}~ por *${brl(x.por)}*`).join('\n');
   (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(
     ()=>toast('t-dash','Lista copiada! É só colar no WhatsApp.',true),
@@ -1252,12 +1304,13 @@ function copiarListaWhats(){
 function imprimirLista(){
   const L=listaPromo();if(!L.length){toast('t-dash','A lista está vazia.',false);return;}
   const w=window.open('','_blank');if(!w){toast('t-dash','Permita pop-ups para imprimir.',false);return;}
+  const T=listaTitulo();
   const linhas=L.map(x=>`<tr><td>${x.p.nome}</td><td class="de">${brl(x.de)}</td><td class="por">${brl(x.por)}</td></tr>`).join('');
-  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${campanha.nome||'Promoção'}</title><style>
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${T.nome}</title><style>
     body{font-family:Arial,sans-serif;margin:24px;color:#222}h1{font-size:22px;margin:0 0 4px}p{margin:0 0 16px;color:#666}
     table{width:100%;border-collapse:collapse}td{padding:7px 6px;border-bottom:1px solid #ddd;font-size:14px}
     .de{text-decoration:line-through;color:#888;width:110px}.por{font-weight:bold;font-size:16px;width:120px}</style></head><body>
-    <h1>${campanha.nome||'Promoção Aurora Prata'}</h1><p>${campanha.ini?isoParaBR(campanha.ini):''}${campanha.fim?' a '+isoParaBR(campanha.fim):''}</p>
+    <h1>${T.nome}</h1><p>${T.ini?isoParaBR(T.ini):''}${T.fim?' a '+isoParaBR(T.fim):''}</p>
     <table>${linhas}</table><script>window.onload=()=>window.print()<\/script></body></html>`);
   w.document.close();
 }
