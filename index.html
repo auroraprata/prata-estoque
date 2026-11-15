@@ -1134,13 +1134,17 @@ function campInputs(p){
     <td><input type="text" value="${escAttr(nomeVal)}" placeholder="${escAttr(phNome)}" style="width:115px;padding:3px 5px" onchange="setPecaNome('${p.cod}',this.value)"></td>`;
 }
 function campPrices(c,p){
-  const d=campDescFor(p);
+  let d=campDescFor(p),agend='';
+  if(!d&&!campanha.pausada&&!pecaTem(p)){ // promoção fixa ainda não começou: mostra o preço que vai ficar
+    const fq=fixaQualquer(p);
+    if(fq&&fixaAberta(fq.f)){d=Math.min(99,fq.d);agend=`<div style="font-size:10px;color:var(--color-text-secondary)">a partir de ${isoParaBR(fq.f.ini).slice(0,5)}</div>`;}
+  }
   if(!d)return'<td style="color:var(--color-text-secondary)">—</td><td style="color:var(--color-text-secondary)">—</td>';
   const preco=c.preco*(1-d/100);
   const lucro=preco-c.base;
   const cor=lucro<0?'var(--color-text-danger)':(lucro+0.005<c.lucroGarantido?'#b26b00':'var(--color-text-success)');
   const dica=lucro<0?'Prejuízo':(lucro+0.005<c.lucroGarantido?`Come ${pct(100-lucro/c.lucroGarantido*100)} da reposição`:'Reposição garantida');
-  return`<td title="${escAttr(promoNomeFor(p))}"><b>${brl(preco)}</b> <span style="font-size:10px;color:var(--color-text-secondary)">(${pct(d)})</span></td><td style="color:${cor};font-weight:500" title="${dica}">${brlS(lucro)}</td>`;
+  return`<td title="${escAttr(promoNomeFor(p))}"><b>${brl(preco)}</b> <span style="font-size:10px;color:var(--color-text-secondary)">(${pct(d)})</span>${agend}</td><td style="color:${cor};font-weight:500" title="${dica}">${brlS(lucro)}</td>`;
 }
 function renderEstoque(){
   const ci=document.getElementById('camp-desc');if(ci&&document.activeElement!==ci)ci.value=Number(campanha.desc)||0;
