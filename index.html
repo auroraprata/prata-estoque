@@ -43,6 +43,9 @@ body{font-family:var(--font-sans);font-size:14px;color:var(--color-text-primary)
 .logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600;letter-spacing:.5px;color:#f3f4f6}
 .logo i{background:var(--silver-gradient);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:20px!important}
 .gs-pill{font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,0.08);color:#e3a8ad;cursor:pointer;border:1px solid rgba(255,255,255,0.12);transition:all .2s}
+.gs-pill.off{color:#f0c987}
+#offline-bar{display:none;background:#fff4e0;color:#7a4b00;border-bottom:1px solid #f0d9a8;padding:8px 16px;font-size:12px}
+#offline-bar.show{display:block}
 .gs-pill.ok{background:rgba(255,255,255,0.08);color:#a9d8cb;border-color:rgba(255,255,255,0.12)}
 .topbar .btn{background:rgba(255,255,255,0.06);color:#f3f4f6;border-color:rgba(255,255,255,0.15)}
 .topbar .btn:hover{background:rgba(255,255,255,0.12)}
@@ -161,6 +164,7 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
     <button class="btn" id="btn-sync" onclick="syncAll()"><span aria-hidden="true">↻</span> Sincronizar</button>
   </div>
 </div>
+<div id="offline-bar" role="status"></div>
 
 <nav class="nav">
   <button class="nb on" data-tab="dashboard" onclick="goTab('dashboard')">Dashboard</button>
@@ -168,6 +172,7 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
   <button class="nb" data-tab="entrada" onclick="goTab('entrada')">Entrada de Estoque</button>
   <button class="nb" data-tab="vendas" onclick="goTab('vendas')">Vendas</button>
   <button class="nb" data-tab="novavenda" onclick="goTab('novavenda')">Nova Venda</button>
+  <button class="nb" data-tab="promocoes" onclick="goTab('promocoes')">Promoções</button>
   <button class="nb" data-tab="relatorio" onclick="goTab('relatorio')">Relatório</button>
   <button class="nb" data-tab="config" onclick="goTab('config')">Config</button>
 </nav>
@@ -269,6 +274,7 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
     <b>Padrão geral:</b>
     <span>Margem <input type="number" id="pad-marg" value="50" onchange="updatePadrao()">%</span>
     <span>Promoção <input type="number" id="pad-promo" value="0" onchange="updatePadrao()">%</span>
+    <span title="Desconto de uma campanha (ex.: Black). Deixe 0 para esconder as colunas da campanha." style="border-left:1px solid var(--color-border-tertiary,#ddd);padding-left:10px"><b>Campanha (ex.: Black)</b> <input type="number" id="camp-desc" value="0" min="0" max="99" onchange="updateCampanha()">%</span>
     <select class="cat-filter" id="cat-filter-estoque" onchange="renderEstoque()" style="margin-left:auto"></select>
   </div>
   <div class="sh">
@@ -278,8 +284,8 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
   <div class="tw"><table>
     <thead><tr>
       <th style="width:130px">Produto</th><th style="width:55px">Código</th><th style="width:80px">Categoria</th><th style="width:40px">Qtd</th>
-      <th style="width:60px">Custo</th><th style="width:60px">Insumo</th><th style="width:65px">Mínimo</th><th style="width:65px">Desc. máx.</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
-      <th style="width:70px">Preço</th><th style="width:75px">Lucro gar.</th><th style="width:50px">Ações</th>
+      <th style="width:60px">Custo</th><th style="width:60px">Insumo</th><th style="width:70px" title="Custo + insumo: abaixo disso dá prejuízo">Mín. s/ lucro</th><th style="width:65px">Desc. máx.</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
+      <th style="width:75px" title="Preço normal com o desconto da coluna Promo aplicado">Com desconto</th><th style="width:75px" title="Preço normal, já com a folga de promoção embutida">Preço normal</th><th style="width:75px">Lucro gar.</th><th class="col-camp" style="width:80px;display:none" title="Preço normal com o desconto da campanha">Preço campanha</th><th class="col-camp" style="width:80px;display:none" title="Quanto sobra vendendo pelo preço da campanha (verde: reposição garantida; laranja: come parte da reposição; vermelho: prejuízo)">Lucro campanha</th><th style="width:50px">Ações</th>
     </tr></thead>
     <tbody id="tb-estoque"></tbody>
   </table></div>
@@ -404,6 +410,42 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
 </div>
 
 <!-- ===================== RELATORIO ===================== -->
+<div class="sc" id="sc-promocoes">
+  <div class="grid2" style="align-items:start">
+    <div class="panel-card">
+      <div class="st" style="margin-bottom:10px">Campanha</div>
+      <div class="field"><label>Nome</label><input id="cp-nome" type="text" placeholder="Ex.: Black Aurora Prata" oninput="salvarCampanhaForm()"></div>
+      <div class="grid2">
+        <div class="field"><label>Início</label><input id="cp-ini" type="date" onchange="salvarCampanhaForm()"></div>
+        <div class="field"><label>Fim</label><input id="cp-fim" type="date" onchange="salvarCampanhaForm()"></div>
+      </div>
+      <div class="field"><label>Desconto geral (%)</label><input id="cp-desc" type="number" min="0" max="99" step="1" oninput="salvarCampanhaForm()"></div>
+      <div class="field"><label>Desconto por categoria (deixe vazio para usar o geral)</label><div id="cp-cats" style="display:grid;grid-template-columns:1fr 90px;gap:6px 10px;align-items:center"></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="cp-pausar" onclick="pausarCampanha()">⏸ Pausar</button>
+        <button class="btn" onclick="encerrarCampanha()">Encerrar campanha</button>
+      </div>
+      <div id="cp-status" class="formula-box" style="margin-top:12px"></div>
+    </div>
+    <div class="panel-card">
+      <div class="st" style="margin-bottom:8px">Resumo da campanha</div>
+      <div class="metrics3" id="cp-resumo"></div>
+      <div class="formula-box" id="cp-resumo-info" style="margin-top:12px"></div>
+    </div>
+  </div>
+  <div class="sh" style="margin-top:16px">
+    <span class="st">Lista para o estande (<span id="cp-cnt">0</span>)</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" onclick="copiarListaWhats()">Copiar para WhatsApp</button>
+      <button class="btn btn-sm" onclick="imprimirLista()">Imprimir lista</button>
+    </div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Produto</th><th style="width:80px">Categoria</th><th style="width:40px">Qtd</th><th style="width:72px">Desc.</th><th style="width:85px">De</th><th style="width:85px">Por</th><th style="width:85px">Lucro</th></tr></thead>
+    <tbody id="tb-promo"></tbody>
+  </table></div>
+</div>
+
 <div class="sc" id="sc-relatorio">
   <div class="sh"><span class="st">Relatório por produto</span></div>
   <div class="tw"><table>
@@ -481,7 +523,56 @@ function hojeStr(){const d=new Date();return String(d.getDate()).padStart(2,'0')
 // ---------- ESTADO GLOBAL ----------
 let padMarg=50, padPromo=0;
 let gsUrl='';
-let conectado=false;
+let conectado=false;   // tem dados reais (da planilha ou do cache do aparelho)
+let online=false;      // a última tentativa de falar com a planilha funcionou
+let cacheTs=null;
+const LS_CACHE='prata_cache', LS_FILA='prata_fila';
+function lerFila(){try{return JSON.parse(localStorage.getItem(LS_FILA)||'[]');}catch(e){return[];}}
+function gravarFila(f){try{localStorage.setItem(LS_FILA,JSON.stringify(f));}catch(e){}}
+function salvarCache(){
+  if(!gsUrl||!conectado)return;
+  try{cacheTs=cacheTs||Date.now();localStorage.setItem(LS_CACHE,JSON.stringify({produtos,vendas,ts:cacheTs}));}catch(e){}
+}
+function lerCache(){try{return JSON.parse(localStorage.getItem(LS_CACHE)||'null');}catch(e){return null;}}
+function fmtDataHora(ts){if(!ts)return'—';const d=new Date(ts);return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}
+function atualizarStatus(){
+  const pill=document.getElementById('gs-pill');const bar=document.getElementById('offline-bar');
+  const n=lerFila().length;
+  pill.classList.remove('ok','off');
+  if(!gsUrl){pill.textContent='⬤ Desconectado';}
+  else if(online){pill.textContent='⬤ Conectado'+(n?` · ${n} pendente(s)`:'');pill.classList.add('ok');}
+  else{pill.textContent='⬤ Offline'+(n?` · ${n} pendente(s)`:'');pill.classList.add('off');}
+  if(bar){
+    if(gsUrl&&!online){
+      bar.innerHTML=conectado
+        ?`<b>Sem conexão.</b> Mostrando o estoque salvo neste aparelho em ${fmtDataHora(cacheTs)}. Vendas e alterações ficam guardadas${n?` (<b>${n}</b> aguardando)`:''} e são enviadas sozinhas quando a internet voltar.`
+        :`<b>Sem conexão e sem dados salvos neste aparelho.</b> Conecte-se à internet e toque em Sincronizar.`;
+      bar.classList.add('show');
+    }else if(n){bar.innerHTML=`<b>${n}</b> alteração(ões) aguardando envio para a planilha…`;bar.classList.add('show');}
+    else bar.classList.remove('show');
+  }
+}
+let enviandoFila=false;
+async function enviarFila(){
+  if(enviandoFila||!gsUrl)return 0;
+  let fila=lerFila();if(!fila.length)return 0;
+  enviandoFila=true;let enviados=0;
+  try{
+    while(fila.length){
+      const item=fila[0];
+      let json;
+      try{
+        const res=await fetch(gsUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(item.payload)});
+        json=await res.json();
+      }catch(e){online=false;break;}   // ainda sem internet: para e tenta depois
+      online=true;
+      if(!json.ok)toast('t-dash','A planilha recusou uma alteração guardada: '+(json.error||'erro desconhecido'),false);
+      fila.shift();gravarFila(fila);enviados++;
+    }
+  }finally{enviandoFila=false;atualizarStatus();}
+  if(enviados)toast('t-dash',`${enviados} alteração(ões) guardada(s) offline enviada(s) para a planilha.`,true);
+  return enviados;
+}
 
 let produtos=[
   {nome:'OUTUBRO ROSA',cod:'P001',forn:'Silver Crown',categoria:'Outros',qtd:1,custo:0.01,gastos:5.81,insumo:2.9,ovm:false,marg:null,ovp:false,promo:null},
@@ -630,6 +721,8 @@ async function conectarGS(){
   btn.disabled=true;btn.innerHTML='<span class="spin"></span> Conectando...';
   status.textContent='Buscando dados da planilha...';
   try{
+    await enviarFila();
+    if(lerFila().length)throw new Error('ainda há alterações aguardando envio');
     const res=await fetch(gsUrl);
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
@@ -648,10 +741,9 @@ async function conectarGS(){
       obs:r['Obs']||''
     }));
 
-    conectado=true;
+    conectado=true;online=true;cacheTs=Date.now();salvarCache();
     localStorage.setItem('prata_gs_url', gsUrl);
-    const pill=document.getElementById('gs-pill');
-    pill.textContent='⬤ Conectado';pill.classList.add('ok');
+    atualizarStatus();
     status.innerHTML=`<span style="color:var(--color-text-success)"><span aria-hidden="true">✓</span> ${produtos.length} produto(s) e ${vendas.length} venda(s) carregados.</span>`;
     document.getElementById('cat-filter-estoque').innerHTML='';
     document.getElementById('cat-filter-vendidos').innerHTML='';
@@ -660,29 +752,55 @@ async function conectarGS(){
     goTab('dashboard');
     toast('t-dash','Conectado e dados carregados da planilha!',true);
   }catch(e){
-    status.innerHTML=`<span style="color:var(--color-text-danger)"><span aria-hidden="true">⚠</span> Erro ao conectar: ${e.message}. Confira se a URL está correta e se a implantação está com acesso "Qualquer pessoa".</span>`;
-    toast('t-dash','Falha ao conectar com a planilha.',false);
+    online=false;
+    const cache=lerCache();
+    if(cache&&Array.isArray(cache.produtos)){
+      produtos=cache.produtos;vendas=cache.vendas||[];cacheTs=cache.ts||null;conectado=true;
+      localStorage.setItem('prata_gs_url', gsUrl);
+      status.innerHTML=`<span style="color:#7a4b00"><span aria-hidden="true">⚠</span> Sem conexão com a planilha (${e.message}). Usando os dados salvos neste aparelho em ${fmtDataHora(cacheTs)}.</span>`;
+      document.getElementById('cat-filter-estoque').innerHTML='';
+      document.getElementById('cat-filter-vendidos').innerHTML='';
+      if(!document.getElementById('nv-data').value)document.getElementById('nv-data').value=hojeStr();
+      atualizarStatus();goTab('dashboard');
+      toast('t-dash','Sem internet — usando o estoque salvo no aparelho.',false);
+    }else{
+      if(gsUrl){produtos=[];vendas=[];conectado=false;}
+      status.innerHTML=`<span style="color:var(--color-text-danger)"><span aria-hidden="true">⚠</span> Erro ao conectar: ${e.message}. Confira a internet, se a URL está correta e se a implantação está com acesso "Qualquer pessoa".</span>`;
+      atualizarStatus();
+      toast('t-dash','Falha ao conectar com a planilha.',false);
+    }
   }finally{
     btn.disabled=false;btn.innerHTML='<span aria-hidden="true">⚡</span> Conectar e carregar dados';
   }
 }
+function enfileirar(payload){
+  const f=lerFila();f.push({payload,ts:Date.now()});gravarFila(f);
+  salvarCache();atualizarStatus();
+  return{ok:true,queued:true};
+}
 async function gsPost(payload){
   if(!gsUrl){toast('t-dash','Conecte ao Google Sheets na aba Config primeiro.',false);return null;}
+  salvarCache();
+  // se já há fila (ou o aparelho está sem rede), entra no fim da fila para manter a ordem
+  if(lerFila().length||!navigator.onLine){const r=enfileirar(payload);enviarFila();return r;}
   try{
     const res=await fetch(gsUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const json=await res.json();
+    online=true;atualizarStatus();
     if(!json.ok)toast('t-dash','Planilha retornou erro: '+(json.error||'desconhecido'),false);
     return json;
-  }catch(e){toast('t-dash','Erro de conexão com a planilha.',false);return null;}
+  }catch(e){online=false;return enfileirar(payload);}
 }
+const MSG_FILA='Sem internet: guardado no aparelho e será enviado sozinho quando a conexão voltar.';
 function desconectarGS(){
   localStorage.removeItem('prata_gs_url');
   gsUrl='';
-  conectado=false;
+  conectado=false;online=false;
   document.getElementById('cfg-url').value='';
   document.getElementById('cfg-status').textContent='URL removida. Conecte novamente.';
   const pill=document.getElementById('gs-pill');
-  pill.textContent='⬤ Desconectado';pill.classList.remove('ok');
+  pill.textContent='⬤ Desconectado';pill.classList.remove('ok','off');
+  atualizarStatus();
   toast('t-dash','Desconectado do Google Sheets.',true);
 }
 async function syncAll(){
@@ -703,6 +821,7 @@ function goTab(tab){
   if(tab==='vendas')renderVendas();
   if(tab==='novavenda'){populaSelectProdutos('nv-prod');previewVenda();if(!document.getElementById('nv-data').value)document.getElementById('nv-data').value=hojeStr();}
   if(tab==='relatorio')renderRelatorio();
+  if(tab==='promocoes')renderPromocoes();
 }
 function goEntradaTab(t){
   document.querySelectorAll('[data-et]').forEach(b=>b.classList.toggle('on',b.dataset.et===t));
@@ -717,7 +836,7 @@ function goVendasTab(t){
 // ================= DASHBOARD =================
 function renderDash(){
   const dw=document.getElementById('dash-demo-warning');
-  dw.innerHTML=conectado?'':`<div class="alert aw" style="margin-bottom:14px"><span aria-hidden="true">ℹ</span><div><b>Modo demonstração</b><br><span style="font-size:11px">Dados de exemplo. Conecte sua planilha na aba Config para ver os dados reais.</span></div></div>`;
+  dw.innerHTML=conectado?'':gsUrl?`<div class="alert aw" style="margin-bottom:14px"><span aria-hidden="true">⚠</span><div><b>Sem dados</b><br><span style="font-size:11px">Não foi possível carregar a planilha e não há estoque salvo neste aparelho. Conecte-se à internet e toque em Sincronizar.</span></div></div>`:`<div class="alert aw" style="margin-bottom:14px"><span aria-hidden="true">ℹ</span><div><b>Modo demonstração</b><br><span style="font-size:11px">Dados de exemplo. Conecte sua planilha na aba Config para ver os dados reais.</span></div></div>`;
 
   const hoje=new Date();
   const mesAtual=hoje.getMonth(),anoAtual=hoje.getFullYear();
@@ -881,7 +1000,47 @@ function updatePadrao(){
   padPromo=Number(document.getElementById('pad-promo').value)||0;
   renderEstoque();
 }
+// ---------- CAMPANHA (ex.: Black) — fica salva neste aparelho ----------
+let campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pausada:false};
+try{const c=JSON.parse(localStorage.getItem('prata_campanha_cfg')||'null');if(c)campanha=Object.assign(campanha,c);
+    else{const old=Number(localStorage.getItem('prata_campanha'))||0;if(old)campanha.desc=old;}}catch(e){}
+function gravarCampanha(){try{localStorage.setItem('prata_campanha_cfg',JSON.stringify(campanha));}catch(e){}}
+function hojeISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function isoParaBR(iso){if(!iso)return'';const[a,m,d]=iso.split('-');return`${d}/${m}/${a}`;}
+function campanhaTemDesconto(){return (Number(campanha.desc)||0)>0||Object.values(campanha.cats||{}).some(v=>Number(v)>0);}
+function campanhaEstado(){ // 'off' | 'futura' | 'ativa' | 'encerrada'
+  if(!campanhaTemDesconto())return'off';
+  if(campanha.pausada)return'pausada';
+  const h=hojeISO();
+  if(campanha.ini&&h<campanha.ini)return'futura';
+  if(campanha.fim&&h>campanha.fim)return'encerrada';
+  return'ativa';
+}
+function campDescFor(p){
+  if(campanhaEstado()!=='ativa')return 0;
+  const vc=campanha.cats&&campanha.cats[p.categoria];
+  const v=(vc!==undefined&&vc!==''&&vc!==null)?Number(vc):Number(campanha.desc);
+  return Math.min(99,Math.max(0,v||0));
+}
+let campDesc=0; // usado só para mostrar/esconder colunas no Estoque
+function updateCampanha(){
+  campanha.desc=Math.min(99,Math.max(0,Number(document.getElementById('camp-desc').value)||0));
+  gravarCampanha();renderEstoque();
+}
+function campCells(c,p){
+  const d=campDescFor(p);
+  if(!campDesc)return'';
+  if(!d)return'<td>—</td><td>—</td>';
+  const preco=c.preco*(1-d/100);
+  const lucro=preco-c.base;
+  const cor=lucro<0?'var(--color-text-danger)':(lucro+0.005<c.lucroGarantido?'#b26b00':'var(--color-text-success)');
+  const dica=lucro<0?'Prejuízo':(lucro+0.005<c.lucroGarantido?`Come ${pct(100-lucro/c.lucroGarantido*100)} da reposição`:'Reposição garantida');
+  return`<td><b>${brl(preco)}</b> <span style="font-size:10px;color:var(--color-text-secondary)">(${pct(d)})</span></td><td style="color:${cor};font-weight:500" title="${dica}">${brlS(lucro)}</td>`;
+}
 function renderEstoque(){
+  campDesc=campanhaEstado()==='ativa'?1:0;
+  const ci=document.getElementById('camp-desc');if(ci&&document.activeElement!==ci)ci.value=Number(campanha.desc)||0;
+  document.querySelectorAll('.col-camp').forEach(th=>th.style.display=campDesc?'':'none');
   const sel=document.getElementById('cat-filter-estoque');
   if(sel.options.length===0)sel.innerHTML=['Todas',...getCategorias()].map(c=>`<option value="${c}">${c}</option>`).join('');
   const catSel=sel.value||'Todas';
@@ -896,10 +1055,106 @@ function renderEstoque(){
     const tr=document.createElement('tr');
     tr.innerHTML=`<td title="${p.nome}">${p.nome}</td><td>${p.cod}</td><td><span class="badge">${p.categoria}</span></td><td style="${p.qtd<=0?'color:var(--color-text-danger);font-weight:500':''}">${p.qtd}</td>
       <td>${brl(p.custo)}</td><td>${brl(p.insumo)}</td><td title="Custo + gastos + insumo: vendendo por isso o lucro é zero">${brl(c.base)}</td><td title="Maior desconto sobre o preço sem ter prejuízo">${pct(descMax(c.preco,c.base))}</td><td>${margBadge}</td><td>${promoBadge}</td>
-      <td>${brl(c.preco)}</td><td>${brl(c.lucroGarantido)}</td>
+      <td>${brl(c.precoPromo)}</td><td><b>${brl(c.preco)}</b></td><td>${brl(c.lucroGarantido)}</td>${campCells(c,p)}
       <td><button class="btn btn-sm" onclick="abrirEdicao('${p.cod}')"><span aria-hidden="true">✏</span></button></td>`;
     tb.appendChild(tr);
   });
+}
+
+// ================= PROMOÇÕES =================
+function salvarCampanhaForm(){
+  campanha.nome=document.getElementById('cp-nome').value;
+  campanha.ini=document.getElementById('cp-ini').value;
+  campanha.fim=document.getElementById('cp-fim').value;
+  campanha.desc=Math.min(99,Math.max(0,Number(document.getElementById('cp-desc').value)||0));
+  const cats={};
+  document.querySelectorAll('#cp-cats input').forEach(i=>{if(i.value!=='')cats[i.dataset.cat]=Math.min(99,Math.max(0,Number(i.value)||0));});
+  campanha.cats=cats;
+  gravarCampanha();renderPromocoes(true);
+}
+function pausarCampanha(){
+  if(!campanhaTemDesconto()){toast('t-dash','Não há campanha para pausar.',false);return;}
+  campanha.pausada=!campanha.pausada;gravarCampanha();renderPromocoes(true);
+  toast('t-dash',campanha.pausada?'Campanha pausada: preços normais até você retomar.':'Campanha retomada.',true);
+}
+function encerrarCampanha(){
+  campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pausada:false};gravarCampanha();
+  ['cp-nome','cp-ini','cp-fim','cp-desc'].forEach(id=>document.getElementById(id).value='');
+  renderPromocoes();toast('t-dash','Campanha encerrada. Os preços voltaram ao normal.',true);
+}
+function listaPromo(){
+  return produtos.filter(p=>p.qtd>0&&campDescFor(p)>0).map(p=>{
+    const c=calcProduto(p),d=campDescFor(p),por=c.preco*(1-d/100);
+    return{p,c,d,de:c.preco,por,lucro:por-c.base};
+  }).sort((a,b)=>a.p.categoria.localeCompare(b.p.categoria)||a.p.nome.localeCompare(b.p.nome));
+}
+function renderPromocoes(doForm){
+  if(!doForm){
+    document.getElementById('cp-nome').value=campanha.nome||'';
+    document.getElementById('cp-ini').value=campanha.ini||'';
+    document.getElementById('cp-fim').value=campanha.fim||'';
+    document.getElementById('cp-desc').value=Number(campanha.desc)||'';
+    document.getElementById('cp-cats').innerHTML=getCategorias().sort().map(cat=>
+      `<span style="font-size:12px">${cat}</span><input type="number" min="0" max="99" placeholder="${Number(campanha.desc)||0}" data-cat="${cat}" value="${campanha.cats&&campanha.cats[cat]!==undefined?campanha.cats[cat]:''}" oninput="salvarCampanhaForm()">`).join('');
+  }
+  const est=campanhaEstado();
+  const per=campanha.ini||campanha.fim?` (${campanha.ini?isoParaBR(campanha.ini):'…'} a ${campanha.fim?isoParaBR(campanha.fim):'…'})`:'';
+  const msg={off:'Nenhuma campanha. Coloque um desconto para começar.',
+    futura:`<b>${campanha.nome||'Campanha'}</b> agendada${per}. Os descontos ligam sozinhos no início.`,
+    ativa:`<b>${campanha.nome||'Campanha'}</b> <span style="color:var(--color-text-success)">ativa</span>${per}. Os descontos aparecem no Estoque e já vêm preenchidos na Nova Venda.`,
+    encerrada:`<b>${campanha.nome||'Campanha'}</b> terminou${per}. Os preços já voltaram ao normal.`,
+    pausada:`<b>${campanha.nome||'Campanha'}</b> <span style="color:#b26b00">pausada</span>${per}. Preços normais até você tocar em Retomar.`}[est];
+  const bp=document.getElementById('cp-pausar');
+  bp.textContent=campanha.pausada?'▶ Retomar':'⏸ Pausar';bp.disabled=!campanhaTemDesconto();
+  document.getElementById('cp-status').innerHTML=msg+'<br><span style="font-size:11px;color:var(--color-text-secondary)">A campanha fica salva neste aparelho.</span>';
+
+  // lista
+  const L=listaPromo();
+  document.getElementById('cp-cnt').textContent=L.length;
+  const tb=document.getElementById('tb-promo');
+  tb.innerHTML=L.length?L.map(x=>{
+    const cor=x.lucro<0?'var(--color-text-danger)':(x.lucro+0.005<x.c.lucroGarantido?'#b26b00':'var(--color-text-success)');
+    return`<tr><td title="${x.p.nome}">${x.p.nome}</td><td><span class="badge">${x.p.categoria}</span></td><td>${x.p.qtd}</td><td>${pct(x.d)}</td><td style="text-decoration:line-through;color:var(--color-text-secondary)">${brl(x.de)}</td><td><b>${brl(x.por)}</b></td><td style="color:${cor};font-weight:500">${brlS(x.lucro)}</td></tr>`;
+  }).join(''):`<tr><td colspan="7" style="text-align:center;color:var(--color-text-secondary);padding:18px">${est==='ativa'?'Nenhuma peça em estoque com desconto.':est==='pausada'?'Campanha pausada. Toque em Retomar para ver a lista.':'A lista aparece quando a campanha estiver ativa.'}</td></tr>`;
+  const prej=L.filter(x=>x.lucro<0).length, come=L.filter(x=>x.lucro>=0&&x.lucro+0.005<x.c.lucroGarantido).length;
+
+  // resumo das vendas no período
+  let vs=[];
+  if(est!=='off'&&(campanha.ini||campanha.fim)){
+    const ini=campanha.ini?new Date(campanha.ini+'T00:00:00'):new Date(2000,0,1);
+    const fim=campanha.fim?new Date(campanha.fim+'T23:59:59'):new Date(2100,0,1);
+    vs=vendas.filter(v=>{const d=parseData(v.data);return d>=ini&&d<=fim;});
+  }
+  let fat=0,luc=0,repos=0,pecas=0;
+  vs.forEach(v=>{const k=vendaCalc(v);fat+=k.total;luc+=k.lucro;pecas+=Number(v.qtd)||0;
+    const prod=produtos.find(p=>p.cod===v.cod);if(prod){const c=calcProduto(prod);repos+=Math.max(0,c.lucroGarantido*v.qtd-k.lucro);}});
+  document.getElementById('cp-resumo').innerHTML=`
+    <div class="mc"><div class="ml">Vendido</div><div class="mv">${brl(fat)}</div></div>
+    <div class="mc"><div class="ml">Lucro</div><div class="mv" style="color:var(${luc<0?'--color-text-danger':'--color-text-success'})">${brlS(luc)}</div></div>
+    <div class="mc"><div class="ml">Peças</div><div class="mv">${pecas}</div></div>`;
+  document.getElementById('cp-resumo-info').innerHTML=(campanha.ini||campanha.fim)
+    ?`${vs.length} venda(s) no período.<br>Reposição usada nos descontos: <b>${brl(repos)}</b><br>${come?`⚠ ${come} peça(s) da lista comem parte da reposição.<br>`:''}${prej?`<span style="color:var(--color-text-danger)">⚠ ${prej} peça(s) da lista ficam no prejuízo com esse desconto.</span>`:''}`
+    :`Defina início e fim para ver o resumo das vendas da campanha.${prej?`<br><span style="color:var(--color-text-danger)">⚠ ${prej} peça(s) ficam no prejuízo com esse desconto.</span>`:''}`;
+}
+function copiarListaWhats(){
+  const L=listaPromo();if(!L.length){toast('t-dash','A lista está vazia.',false);return;}
+  const titulo=`✨ *${campanha.nome||'Promoção Aurora Prata'}*`+(campanha.ini||campanha.fim?`\n${campanha.ini?isoParaBR(campanha.ini):''}${campanha.fim?' a '+isoParaBR(campanha.fim):''}`:'');
+  const txt=titulo+'\n\n'+L.map(x=>`• ${x.p.nome}\n  de ~${brl(x.de)}~ por *${brl(x.por)}*`).join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(
+    ()=>toast('t-dash','Lista copiada! É só colar no WhatsApp.',true),
+    ()=>{const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast('t-dash','Lista copiada! É só colar no WhatsApp.',true);});
+}
+function imprimirLista(){
+  const L=listaPromo();if(!L.length){toast('t-dash','A lista está vazia.',false);return;}
+  const w=window.open('','_blank');if(!w){toast('t-dash','Permita pop-ups para imprimir.',false);return;}
+  const linhas=L.map(x=>`<tr><td>${x.p.nome}</td><td class="de">${brl(x.de)}</td><td class="por">${brl(x.por)}</td></tr>`).join('');
+  w.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${campanha.nome||'Promoção'}</title><style>
+    body{font-family:Arial,sans-serif;margin:24px;color:#222}h1{font-size:22px;margin:0 0 4px}p{margin:0 0 16px;color:#666}
+    table{width:100%;border-collapse:collapse}td{padding:7px 6px;border-bottom:1px solid #ddd;font-size:14px}
+    .de{text-decoration:line-through;color:#888;width:110px}.por{font-weight:bold;font-size:16px;width:120px}</style></head><body>
+    <h1>${campanha.nome||'Promoção Aurora Prata'}</h1><p>${campanha.ini?isoParaBR(campanha.ini):''}${campanha.fim?' a '+isoParaBR(campanha.fim):''}</p>
+    <table>${linhas}</table><script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
 }
 
 // ---- modal edição ----
@@ -959,7 +1214,7 @@ async function salvarEdicao(){
   fecharModal();renderEstoque();
   if(conectado){
     const r=await gsPost({action:'updateProduto',produto:{cod:p.cod,nome:p.nome,categoria:p.categoria,qtd:p.qtd,custo:p.custo,gastos:p.gastos,insumo:p.insumo,marg:p.marg,promo:p.promo}});
-    if(r&&r.ok)toast('t-dash','Produto atualizado na planilha!',true);
+    if(r&&r.ok)toast('t-dash',r.queued?MSG_FILA:'Produto atualizado na planilha!',true);
   }
 }
 
@@ -1011,7 +1266,7 @@ async function salvarNovoProduto(){
   goTab('estoque');
   if(conectado){
     const r=await gsPost({action:'addProduto',produto:novo});
-    toast('t-dash',r&&r.ok?'Produto cadastrado e salvo na planilha!':'Produto adicionado localmente, mas houve erro ao salvar na planilha.',r&&r.ok);
+    toast('t-dash',r&&r.queued?MSG_FILA:r&&r.ok?'Produto cadastrado e salvo na planilha!':'Produto adicionado localmente, mas houve erro ao salvar na planilha.',r&&r.ok);
   }else{
     toast('t-dash','Produto cadastrado (modo demonstração — conecte a planilha para salvar de verdade).',true);
   }
@@ -1050,7 +1305,7 @@ async function salvarReposicao(){
   goTab('estoque');
   if(conectado){
     const r=await gsPost({action:'repor',cod:p.cod,qtdAdd,novoCusto});
-    toast('t-dash',r&&r.ok?`Estoque de "${p.nome}" atualizado na planilha (+${qtdAdd}).`:`Estoque atualizado localmente (+${qtdAdd}), mas houve erro ao salvar na planilha.`,r&&r.ok);
+    toast('t-dash',r&&r.queued?MSG_FILA:r&&r.ok?`Estoque de "${p.nome}" atualizado na planilha (+${qtdAdd}).`:`Estoque atualizado localmente (+${qtdAdd}), mas houve erro ao salvar na planilha.`,r&&r.ok);
   }else{
     toast('t-dash',`Estoque de "${p.nome}" atualizado (+${qtdAdd}) — modo demonstração.`,true);
   }
@@ -1063,7 +1318,7 @@ function previewVenda(){
   if(!p)return;
   const c=calcProduto(p);
   if(!document.getElementById('nv-preco').dataset.touched)document.getElementById('nv-preco').value=c.preco.toFixed(2);
-  if(!document.getElementById('nv-desc').dataset.touched)document.getElementById('nv-desc').value=c.promo;
+  if(!document.getElementById('nv-desc').dataset.touched)document.getElementById('nv-desc').value=campDescFor(p)||c.promo;
 
   const qtd=Number(document.getElementById('nv-qtd').value)||0;
   const preco=Number(document.getElementById('nv-preco').value)||0;
@@ -1078,7 +1333,8 @@ function previewVenda(){
 
   document.getElementById('nv-estoque-info').innerHTML=`
     <b>${p.nome}</b> <span class="badge">${p.categoria}</span><br>Estoque atual: <b>${p.qtd}</b> unid.<br>
-    Preço sugerido (com margem/promo padrão): <b>${brl(c.preco)}</b><br>
+    Preço normal: <b>${brl(c.preco)}</b> · Com desconto (${pct(c.promo)}): <b>${brl(c.precoPromo)}</b><br>
+    ${campDescFor(p)?`${campanha.nome||'Campanha'} (${pct(campDescFor(p))}): <b>${brl(c.preco*(1-campDescFor(p)/100))}</b><br>`:''}
     Valor mínimo (lucro zero): <b>${brl(c.base)}</b> por unidade${qtd>1?` · <b>${brl(c.base*qtd)}</b> no total`:''}<br>
     Desconto máximo sobre ${brl(preco)}: <b>${pct(descMax(preco,c.base))}</b><br>
     ${lucro<0?'<span style="color:var(--color-text-danger)">⚠ Abaixo do valor mínimo: esta venda dá prejuízo.</span><br>':''}
@@ -1112,7 +1368,7 @@ async function salvarVenda(){
   goTab('dashboard');
   if(conectado){
     const r=await gsPost({action:'addVenda',venda:novaVenda});
-    toast('t-dash',r&&r.ok?`Venda de "${p.nome}" registrada na planilha!`:`Venda registrada localmente, mas houve erro ao salvar na planilha.`,r&&r.ok);
+    toast('t-dash',r&&r.queued?`Venda de "${p.nome}" guardada no aparelho (sem internet). Será enviada sozinha quando a conexão voltar.`:r&&r.ok?`Venda de "${p.nome}" registrada na planilha!`:`Venda registrada localmente, mas houve erro ao salvar na planilha.`,r&&r.ok);
   }else{
     toast('t-dash',`Venda de "${p.nome}" registrada — modo demonstração.`,true);
   }
@@ -1215,10 +1471,11 @@ function initApp(){
 </div>
 
 <script>
-const APP_PASS = 'Aurora@19/08';
-function checkPass(){
+const APP_PASS_HASH = '987c759b486782a639c59e2414c82f9ac59efa2ec13f1191d8b1f8147002805c';
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function checkPass(){
   const v = document.getElementById('lock-input').value;
-  if(v === APP_PASS){
+  if((await sha256(v)) === APP_PASS_HASH){
     document.getElementById('lock-screen').classList.add('hidden');
     initApp();
     const saved = localStorage.getItem('prata_gs_url');
@@ -1238,7 +1495,10 @@ function checkPass(){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('lock-input').focus();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 });
+window.addEventListener('online',()=>{if(gsUrl&&conectado)syncAll();});
+setInterval(()=>{if(gsUrl&&conectado&&(lerFila().length||!online)&&navigator.onLine)syncAll();},60000);
 </script>
 
 <!-- ===================== AGENTE FLUTUANTE ===================== -->
