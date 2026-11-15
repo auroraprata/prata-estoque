@@ -271,10 +271,10 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
 <!-- ===================== ESTOQUE ===================== -->
 <div class="sc" id="sc-estoque">
   <div class="padbar">
-    <b>Padrão geral:</b>
-    <span>Margem <input type="number" id="pad-marg" value="50" onchange="updatePadrao()">%</span>
-    <span>Promoção <input type="number" id="pad-promo" value="0" onchange="updatePadrao()">%</span>
-    <span title="Desconto de uma campanha (ex.: Black). Deixe 0 para esconder as colunas da campanha." style="border-left:1px solid var(--color-border-tertiary,#ddd);padding-left:10px"><b>Campanha (ex.: Black)</b> <input type="number" id="camp-desc" value="0" min="0" max="99" onchange="updateCampanha()">%</span>
+    <span style="display:none"><b>Padrão geral:</b>
+    Margem <input type="number" id="pad-marg" value="50" onchange="updatePadrao()">%
+    Promoção <input type="number" id="pad-promo" value="0" onchange="updatePadrao()">%</span>
+    <span title="Desconto geral da campanha (ex.: Black). As datas e descontos por categoria ficam na aba Promoções."><b>Campanha (ex.: Black)</b> <input type="number" id="camp-desc" value="0" min="0" max="99" onchange="updateCampanha()">%</span>
     <select class="cat-filter" id="cat-filter-estoque" onchange="renderEstoque()" style="margin-left:auto"></select>
   </div>
   <div class="sh">
@@ -284,8 +284,9 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
   <div class="tw"><table>
     <thead><tr>
       <th style="width:130px">Produto</th><th style="width:55px">Código</th><th style="width:80px">Categoria</th><th style="width:40px">Qtd</th>
-      <th style="width:60px">Custo</th><th style="width:60px">Insumo</th><th style="width:70px" title="Custo + insumo: abaixo disso dá prejuízo">Mín. s/ lucro</th><th style="width:65px">Desc. máx.</th><th style="width:55px">Margem</th><th style="width:55px">Promo</th>
-      <th style="width:75px" title="Preço normal com o desconto da coluna Promo aplicado">Com desconto</th><th style="width:75px" title="Preço normal, já com a folga de promoção embutida">Preço normal</th><th style="width:75px">Lucro gar.</th><th class="col-camp" style="width:80px;display:none" title="Preço normal com o desconto da campanha">Preço campanha</th><th class="col-camp" style="width:80px;display:none" title="Quanto sobra vendendo pelo preço da campanha (verde: reposição garantida; laranja: come parte da reposição; vermelho: prejuízo)">Lucro campanha</th><th style="width:50px">Ações</th>
+      <th style="width:60px">Custo</th><th style="width:60px">Insumo</th><th style="width:70px" title="Custo + insumo: abaixo disso dá prejuízo">Mín. s/ lucro</th><th style="width:65px">Desc. máx.</th><th style="width:65px" title="Folga embutida no preço normal (os 20%). Dando esse desconto, você ainda paga a peça, a reposição e a embalagem">% segurança</th>
+      <th style="width:70px" title="Desconto da promoção nesta peça. Digite para dar um desconto só nela; vazio usa o da campanha">% promoção</th><th style="width:120px" title="Nome da promoção desta peça. Vazio usa o nome da campanha">Nome da promoção</th>
+      <th style="width:75px" title="Preço normal menos a % de segurança: paga peça, reposição e embalagem">Mín. c/ repos.</th><th style="width:75px" title="Preço normal, já com a % de segurança embutida">Preço normal</th><th style="width:85px" title="Preço normal com a % da promoção">Preço promoção</th><th style="width:80px" title="Quanto sobra vendendo pelo preço da promoção (verde: reposição garantida; laranja: come parte da reposição; vermelho: prejuízo)">Lucro promoção</th><th style="width:50px">Ações</th>
     </tr></thead>
     <tbody id="tb-estoque"></tbody>
   </table></div>
@@ -327,14 +328,15 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
             <option value="8.5" selected>Padrão (R$ 8,50)</option>
           </select>
         </div>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin:2px 0 10px"><input type="checkbox" id="np-aurora" checked onchange="previewNovo()" style="margin-top:2px"><span><b>Usar regra Aurora</b><br><span style="color:var(--color-text-secondary)">Calcula sozinho: lucro = custo (dinheiro da reposição) + 20% de segurança. Desmarque para pôr a margem na mão.</span></span></label>
         <div class="grid2">
           <div class="field">
-            <label><input type="checkbox" id="np-ovm" onchange="previewNovo()"> Margem personalizada (%)</label>
-            <input id="np-marg" type="number" value="50" disabled oninput="previewNovo()">
+            <label><input type="checkbox" id="np-ovm" onchange="previewNovo()"> Margem (%)</label>
+            <input id="np-marg" type="number" step="0.01" value="50" disabled oninput="previewNovo()">
           </div>
           <div class="field">
-            <label><input type="checkbox" id="np-ovp" onchange="previewNovo()"> Promoção personalizada (%)</label>
-            <input id="np-promo" type="number" value="0" disabled oninput="previewNovo()">
+            <label><input type="checkbox" id="np-ovp" onchange="previewNovo()"> % segurança</label>
+            <input id="np-promo" type="number" step="0.01" value="0" disabled oninput="previewNovo()">
           </div>
         </div>
         <button class="btn btn-primary" onclick="salvarNovoProduto()"><span aria-hidden="true">💾</span> Salvar produto</button>
@@ -421,6 +423,15 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
       </div>
       <div class="field"><label>Desconto geral (%)</label><input id="cp-desc" type="number" min="0" max="99" step="1" oninput="salvarCampanhaForm()"></div>
       <div class="field"><label>Desconto por categoria (deixe vazio para usar o geral)</label><div id="cp-cats" style="display:grid;grid-template-columns:1fr 90px;gap:6px 10px;align-items:center"></div></div>
+      <div class="field"><label>Desconto por peça (ex.: peças paradas — vale mais que o da categoria e o geral)</label>
+        <div style="display:flex;gap:6px">
+          <select id="cp-peca-sel" style="flex:1;min-width:0" onchange="previewPecaPromo()"></select>
+          <input id="cp-peca-desc" type="number" min="0" max="99" placeholder="%" style="width:70px" oninput="previewPecaPromo()">
+          <button class="btn btn-sm" onclick="addPecaPromo()">Adicionar</button>
+        </div>
+        <div id="cp-peca-prev" style="font-size:12px;margin-top:4px;color:var(--color-text-secondary)"></div>
+        <div id="cp-pecas" style="display:flex;flex-direction:column;gap:4px;margin-top:6px"></div>
+      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="cp-pausar" onclick="pausarCampanha()">⏸ Pausar</button>
         <button class="btn" onclick="encerrarCampanha()">Encerrar campanha</button>
@@ -503,9 +514,10 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
         <option value="8.5">Padrão (R$ 8,50)</option>
       </select>
     </div>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin:2px 0 10px"><input type="checkbox" id="ed-aurora" onchange="previewEdit()" style="margin-top:2px"><span><b>Usar regra Aurora</b><br><span style="color:var(--color-text-secondary)">Lucro = custo (reposição) + 20% de segurança. Recalcula sozinho se mudar custo ou insumo.</span></span></label>
     <div class="grid2">
-      <div class="field"><label><input type="checkbox" id="ed-ovm" onchange="previewEdit()"> Margem personalizada (%)</label><input id="ed-marg" type="number" oninput="previewEdit()"></div>
-      <div class="field"><label><input type="checkbox" id="ed-ovp" onchange="previewEdit()"> Promoção personalizada (%)</label><input id="ed-promo" type="number" oninput="previewEdit()"></div>
+      <div class="field"><label><input type="checkbox" id="ed-ovm" onchange="previewEdit()"> Margem (%)</label><input id="ed-marg" type="number" step="0.01" oninput="previewEdit()"></div>
+      <div class="field"><label><input type="checkbox" id="ed-ovp" onchange="previewEdit()"> % segurança</label><input id="ed-promo" type="number" step="0.01" oninput="previewEdit()"></div>
     </div>
     <div class="metrics3" id="ed-preview" style="margin-bottom:10px"></div>
     <button class="btn btn-primary" onclick="salvarEdicao()"><span aria-hidden="true">💾</span> Salvar alterações</button>
@@ -677,6 +689,10 @@ let produtos=[
 let vendas=[];
 
 // ---------- CALCULO DE PRECO ----------
+function margAurora(custo,gastos,insumo){const b=Number(custo||0)+Number(gastos||0)+Number(insumo||0);return b>0?(Number(custo||0)+Number(gastos||0))/b*100:0;}
+const SEG_AURORA=20;
+function segueAurora(p){return p.ovp&&Math.abs(Number(p.promo)-SEG_AURORA)<0.01&&p.ovm&&Math.abs(Number(p.marg)-margAurora(p.custo,p.gastos,p.insumo))<0.05;}
+function proximoCodigo(){let m=0;produtos.forEach(p=>{const n=parseInt(String(p.cod).replace(/\D/g,''),10);if(n>m)m=n;});return'P'+String(m+1).padStart(4,'0');}
 function calcProduto(p){
   const base=Number(p.custo||0)+Number(p.gastos||0)+Number(p.insumo||0);
   let marg=p.ovm&&p.marg!=null?Number(p.marg):padMarg;
@@ -1001,46 +1017,84 @@ function updatePadrao(){
   renderEstoque();
 }
 // ---------- CAMPANHA (ex.: Black) — fica salva neste aparelho ----------
-let campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pausada:false};
+let campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pecas:{},pecasNome:{},pausada:false};
 try{const c=JSON.parse(localStorage.getItem('prata_campanha_cfg')||'null');if(c)campanha=Object.assign(campanha,c);
     else{const old=Number(localStorage.getItem('prata_campanha'))||0;if(old)campanha.desc=old;}}catch(e){}
 function gravarCampanha(){try{localStorage.setItem('prata_campanha_cfg',JSON.stringify(campanha));}catch(e){}}
 function hojeISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function isoParaBR(iso){if(!iso)return'';const[a,m,d]=iso.split('-');return`${d}/${m}/${a}`;}
-function campanhaTemDesconto(){return (Number(campanha.desc)||0)>0||Object.values(campanha.cats||{}).some(v=>Number(v)>0);}
-function campanhaEstado(){ // 'off' | 'futura' | 'ativa' | 'encerrada'
-  if(!campanhaTemDesconto())return'off';
-  if(campanha.pausada)return'pausada';
+// Desconto geral/categoria: vale só nas datas da campanha. Desconto por peça: vale sempre (até ser tirado).
+// "Pausar" desliga tudo.
+function temGeral(){return (Number(campanha.desc)||0)>0||Object.values(campanha.cats||{}).some(v=>Number(v)>0);}
+function temPecas(){return Object.values(campanha.pecas||{}).some(v=>Number(v)>0);}
+function campanhaTemDesconto(){return temGeral()||temPecas();}
+function geralEstado(){ // 'off' | 'futura' | 'ativa' | 'encerrada'
+  if(!temGeral())return'off';
   const h=hojeISO();
   if(campanha.ini&&h<campanha.ini)return'futura';
   if(campanha.fim&&h>campanha.fim)return'encerrada';
   return'ativa';
 }
-function campDescFor(p){
-  if(campanhaEstado()!=='ativa')return 0;
+function campanhaEstado(){
+  if(!campanhaTemDesconto())return'off';
+  if(campanha.pausada)return'pausada';
+  const g=geralEstado();
+  if(g==='ativa'||temPecas())return'ativa';
+  return g;
+}
+function pecaDesc(p){const v=campanha.pecas&&campanha.pecas[p.cod];return(v!==undefined&&v!==''&&v!==null&&Number(v)>0)?Math.min(99,Number(v)):0;}
+function geralDescFor(p){
+  if(geralEstado()!=='ativa')return 0;
   const vc=campanha.cats&&campanha.cats[p.categoria];
   const v=(vc!==undefined&&vc!==''&&vc!==null)?Number(vc):Number(campanha.desc);
   return Math.min(99,Math.max(0,v||0));
 }
-let campDesc=0; // usado só para mostrar/esconder colunas no Estoque
+function campDescFor(p){
+  if(campanha.pausada)return 0;
+  return pecaDesc(p)||geralDescFor(p);
+}
+function promoNomeFor(p){
+  if(campanha.pausada)return'';
+  if(pecaDesc(p))return(campanha.pecasNome&&campanha.pecasNome[p.cod])||campanha.nome||'Desconto da peça';
+  if(geralDescFor(p))return campanha.nome||'Campanha';
+  return'';
+}
+function setPecaDesc(cod,val){
+  campanha.pecas=campanha.pecas||{};
+  const d=Number(val);
+  if(val===''||!(d>0))delete campanha.pecas[cod];else campanha.pecas[cod]=Math.min(99,d);
+  gravarCampanha();renderEstoque();
+}
+function setPecaNome(cod,val){
+  campanha.pecasNome=campanha.pecasNome||{};
+  if(val.trim())campanha.pecasNome[cod]=val.trim();else delete campanha.pecasNome[cod];
+  gravarCampanha();renderEstoque();
+}
 function updateCampanha(){
   campanha.desc=Math.min(99,Math.max(0,Number(document.getElementById('camp-desc').value)||0));
   gravarCampanha();renderEstoque();
 }
-function campCells(c,p){
+function escAttr(t){return String(t||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function campInputs(p){
+  const pd=campanha.pecas&&campanha.pecas[p.cod];
+  const gd=campanha.pausada?0:geralDescFor(p);
+  const nomeP=(campanha.pecasNome&&campanha.pecasNome[p.cod])||'';
+  const phNome=gd?(campanha.nome||'Campanha'):'Ex.: Peça parada';
+  const inputs=`<td><input type="number" min="0" max="99" step="1" value="${pd!==undefined?pd:''}" placeholder="${gd?gd:'—'}" style="width:60px;padding:3px 5px" title="Desconto só desta peça (vazio = usa o da campanha)" onchange="setPecaDesc('${p.cod}',this.value)"></td>
+    <td><input type="text" value="${escAttr(nomeP)}" placeholder="${escAttr(phNome)}" style="width:115px;padding:3px 5px" onchange="setPecaNome('${p.cod}',this.value)"></td>`;
+  return inputs;
+}
+function campPrices(c,p){
   const d=campDescFor(p);
-  if(!campDesc)return'';
-  if(!d)return'<td>—</td><td>—</td>';
+  if(!d)return'<td style="color:var(--color-text-secondary)">—</td><td style="color:var(--color-text-secondary)">—</td>';
   const preco=c.preco*(1-d/100);
   const lucro=preco-c.base;
   const cor=lucro<0?'var(--color-text-danger)':(lucro+0.005<c.lucroGarantido?'#b26b00':'var(--color-text-success)');
   const dica=lucro<0?'Prejuízo':(lucro+0.005<c.lucroGarantido?`Come ${pct(100-lucro/c.lucroGarantido*100)} da reposição`:'Reposição garantida');
-  return`<td><b>${brl(preco)}</b> <span style="font-size:10px;color:var(--color-text-secondary)">(${pct(d)})</span></td><td style="color:${cor};font-weight:500" title="${dica}">${brlS(lucro)}</td>`;
+  return`<td title="${escAttr(promoNomeFor(p))}"><b>${brl(preco)}</b> <span style="font-size:10px;color:var(--color-text-secondary)">(${pct(d)})</span></td><td style="color:${cor};font-weight:500" title="${dica}">${brlS(lucro)}</td>`;
 }
 function renderEstoque(){
-  campDesc=campanhaEstado()==='ativa'?1:0;
   const ci=document.getElementById('camp-desc');if(ci&&document.activeElement!==ci)ci.value=Number(campanha.desc)||0;
-  document.querySelectorAll('.col-camp').forEach(th=>th.style.display=campDesc?'':'none');
   const sel=document.getElementById('cat-filter-estoque');
   if(sel.options.length===0)sel.innerHTML=['Todas',...getCategorias()].map(c=>`<option value="${c}">${c}</option>`).join('');
   const catSel=sel.value||'Todas';
@@ -1054,8 +1108,8 @@ function renderEstoque(){
     const promoBadge=p.ovp?`<span class="badge custom">${pct(c.promo)}</span>`:`${pct(c.promo)}`;
     const tr=document.createElement('tr');
     tr.innerHTML=`<td title="${p.nome}">${p.nome}</td><td>${p.cod}</td><td><span class="badge">${p.categoria}</span></td><td style="${p.qtd<=0?'color:var(--color-text-danger);font-weight:500':''}">${p.qtd}</td>
-      <td>${brl(p.custo)}</td><td>${brl(p.insumo)}</td><td title="Custo + gastos + insumo: vendendo por isso o lucro é zero">${brl(c.base)}</td><td title="Maior desconto sobre o preço sem ter prejuízo">${pct(descMax(c.preco,c.base))}</td><td>${margBadge}</td><td>${promoBadge}</td>
-      <td>${brl(c.precoPromo)}</td><td><b>${brl(c.preco)}</b></td><td>${brl(c.lucroGarantido)}</td>${campCells(c,p)}
+      <td>${brl(p.custo)}</td><td>${brl(p.insumo)}</td><td title="Custo + gastos + insumo: vendendo por isso o lucro é zero">${brl(c.base)}</td><td title="Maior desconto sobre o preço sem ter prejuízo">${pct(descMax(c.preco,c.base))}</td><td>${promoBadge}</td>
+      ${campInputs(p)}<td>${brl(c.precoPromo)}</td><td><b>${brl(c.preco)}</b></td>${campPrices(c,p)}
       <td><button class="btn btn-sm" onclick="abrirEdicao('${p.cod}')"><span aria-hidden="true">✏</span></button></td>`;
     tb.appendChild(tr);
   });
@@ -1070,6 +1124,8 @@ function salvarCampanhaForm(){
   const cats={};
   document.querySelectorAll('#cp-cats input').forEach(i=>{if(i.value!=='')cats[i.dataset.cat]=Math.min(99,Math.max(0,Number(i.value)||0));});
   campanha.cats=cats;
+  campanha.pecas=campanha.pecas||{};
+  document.querySelectorAll('#cp-cats input').forEach(i=>i.placeholder=String(campanha.desc||0));
   gravarCampanha();renderPromocoes(true);
 }
 function pausarCampanha(){
@@ -1078,9 +1134,40 @@ function pausarCampanha(){
   toast('t-dash',campanha.pausada?'Campanha pausada: preços normais até você retomar.':'Campanha retomada.',true);
 }
 function encerrarCampanha(){
-  campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pausada:false};gravarCampanha();
+  campanha={nome:'',ini:'',fim:'',desc:0,cats:{},pecas:campanha.pecas||{},pecasNome:campanha.pecasNome||{},pausada:false};gravarCampanha();
   ['cp-nome','cp-ini','cp-fim','cp-desc'].forEach(id=>document.getElementById(id).value='');
-  renderPromocoes();toast('t-dash','Campanha encerrada. Os preços voltaram ao normal.',true);
+  renderPromocoes();toast('t-dash',temPecas()?'Campanha encerrada. Os descontos por peça continuam — tire no ✕ se quiser.':'Campanha encerrada. Os preços voltaram ao normal.',true);
+}
+function previewPecaPromo(){
+  const p=produtos.find(x=>x.cod===document.getElementById('cp-peca-sel').value);
+  const d=Number(document.getElementById('cp-peca-desc').value)||0;
+  const el=document.getElementById('cp-peca-prev');
+  if(!p){el.innerHTML='';return;}
+  const c=calcProduto(p),por=c.preco*(1-d/100),l=por-c.base;
+  el.innerHTML=`Preço normal <b>${brl(c.preco)}</b>${d?` → com ${pct(d)}: <b>${brl(por)}</b> · lucro <b style="color:var(${l<0?'--color-text-danger':l+0.005<c.lucroGarantido?'--color-text-warning':'--color-text-success'})">${brlS(l)}</b>`:''} · desconto máximo sem prejuízo: ${pct(descMax(c.preco,c.base))}`;
+}
+function addPecaPromo(){
+  const cod=document.getElementById('cp-peca-sel').value;
+  const d=Number(document.getElementById('cp-peca-desc').value);
+  if(!cod||!(d>0)){toast('t-dash','Escolha a peça e o desconto.',false);return;}
+  campanha.pecas=campanha.pecas||{};campanha.pecas[cod]=Math.min(99,d);
+  document.getElementById('cp-peca-desc').value='';
+  gravarCampanha();renderPromocoes(true);previewPecaPromo();
+}
+function removerPecaPromo(cod){delete campanha.pecas[cod];if(campanha.pecasNome)delete campanha.pecasNome[cod];gravarCampanha();renderPromocoes(true);}
+function renderPecasPromo(){
+  const sel=document.getElementById('cp-peca-sel');
+  if(!sel.options.length||sel.options.length!==produtos.length+1)
+    sel.innerHTML='<option value="">Escolha a peça…</option>'+[...produtos].sort((a,b)=>a.nome.localeCompare(b.nome)).map(p=>`<option value="${p.cod}">${p.nome} (${p.cod})</option>`).join('');
+  const ent=Object.entries(campanha.pecas||{});
+  document.getElementById('cp-pecas').innerHTML=ent.map(([cod,d])=>{
+    const p=produtos.find(x=>x.cod===cod);if(!p)return'';
+    const c=calcProduto(p),por=c.preco*(1-d/100);
+    return`<div style="display:flex;align-items:center;gap:8px;font-size:12px;background:var(--color-background-secondary);border-radius:8px;padding:5px 8px">
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.nome}">${p.nome}${campanha.pecasNome&&campanha.pecasNome[cod]?` <i style="color:var(--color-text-secondary)">· ${campanha.pecasNome[cod]}</i>`:''}</span>
+      <b>${pct(d)}</b><span style="text-decoration:line-through;color:var(--color-text-secondary)">${brl(c.preco)}</span><b>${brl(por)}</b>
+      <button class="btn btn-sm" onclick="removerPecaPromo('${cod}')" title="Tirar o desconto desta peça">✕</button></div>`;
+  }).join('');
 }
 function listaPromo(){
   return produtos.filter(p=>p.qtd>0&&campDescFor(p)>0).map(p=>{
@@ -1097,6 +1184,7 @@ function renderPromocoes(doForm){
     document.getElementById('cp-cats').innerHTML=getCategorias().sort().map(cat=>
       `<span style="font-size:12px">${cat}</span><input type="number" min="0" max="99" placeholder="${Number(campanha.desc)||0}" data-cat="${cat}" value="${campanha.cats&&campanha.cats[cat]!==undefined?campanha.cats[cat]:''}" oninput="salvarCampanhaForm()">`).join('');
   }
+  renderPecasPromo();
   const est=campanhaEstado();
   const per=campanha.ini||campanha.fim?` (${campanha.ini?isoParaBR(campanha.ini):'…'} a ${campanha.fim?isoParaBR(campanha.fim):'…'})`:'';
   const msg={off:'Nenhuma campanha. Coloque um desconto para começar.',
@@ -1171,31 +1259,43 @@ function abrirEdicao(cod){
   if(![...selIns.options].some(o=>o.value===vIns)){const o=document.createElement('option');o.value=vIns;o.textContent='Atual ('+brl(Number(vIns))+')';selIns.appendChild(o);}
   selIns.value=vIns;
   document.getElementById('ed-ovm').checked=p.ovm;
-  document.getElementById('ed-marg').value=p.ovm&&p.marg!=null?p.marg:padMarg;
-  document.getElementById('ed-marg').disabled=!p.ovm;
+  const mOrig=p.ovm&&p.marg!=null?Number(p.marg):padMarg;
+  const em=document.getElementById('ed-marg');em.value=Number(mOrig.toFixed(2));em.dataset.orig=mOrig;
   document.getElementById('ed-ovp').checked=p.ovp;
-  document.getElementById('ed-promo').value=p.ovp&&p.promo!=null?p.promo:padPromo;
-  document.getElementById('ed-promo').disabled=!p.ovp;
+  const pOrig=p.ovp&&p.promo!=null?Number(p.promo):padPromo;
+  const ep=document.getElementById('ed-promo');ep.value=Number(pOrig.toFixed(2));ep.dataset.orig=pOrig;
+  document.getElementById('ed-aurora').checked=segueAurora(p);
+  previewEdit();
   previewEdit();
   document.getElementById('modal-edit').classList.add('on');
 }
 function fecharModal(){document.getElementById('modal-edit').classList.remove('on');}
+// lê margem/segurança do formulário (pref = 'ed' ou 'np'), respeitando a regra Aurora
+function valorExato(el){const v=Number(el.value)||0;const o=el.dataset.orig;return(o!==undefined&&o!==''&&Math.abs(Number(Number(o).toFixed(2))-v)<1e-9)?Number(o):v;}
+function lerPreco(pref){
+  const custo=Number(document.getElementById(pref+'-custo').value)||0;
+  const gastos=Number(document.getElementById(pref+'-gastos').value)||0;
+  const insumo=Number(document.getElementById(pref+'-insumo').value)||0;
+  const aur=document.getElementById(pref+'-aurora').checked;
+  const ovmEl=document.getElementById(pref+'-ovm'),ovpEl=document.getElementById(pref+'-ovp');
+  const mEl=document.getElementById(pref+'-marg'),pEl=document.getElementById(pref+'-promo');
+  if(aur){
+    const m=margAurora(custo,gastos,insumo);
+    ovmEl.checked=true;ovpEl.checked=true;ovmEl.disabled=true;ovpEl.disabled=true;
+    mEl.disabled=true;pEl.disabled=true;
+    mEl.value=Number(m.toFixed(2));mEl.dataset.orig=m;pEl.value=SEG_AURORA;pEl.dataset.orig=SEG_AURORA;
+    return{custo,gastos,insumo,ovm:true,marg:m,ovp:true,promo:SEG_AURORA};
+  }
+  ovmEl.disabled=false;ovpEl.disabled=false;
+  mEl.disabled=!ovmEl.checked;pEl.disabled=!ovpEl.checked;
+  return{custo,gastos,insumo,ovm:ovmEl.checked,marg:ovmEl.checked?valorExato(mEl):padMarg,ovp:ovpEl.checked,promo:ovpEl.checked?valorExato(pEl):padPromo};
+}
 function previewEdit(){
-  document.getElementById('ed-marg').disabled=!document.getElementById('ed-ovm').checked;
-  document.getElementById('ed-promo').disabled=!document.getElementById('ed-ovp').checked;
-  const tmp={
-    custo:Number(document.getElementById('ed-custo').value)||0,
-    gastos:Number(document.getElementById('ed-gastos').value)||0,
-    insumo:Number(document.getElementById('ed-insumo').value)||0,
-    ovm:document.getElementById('ed-ovm').checked,
-    marg:Number(document.getElementById('ed-marg').value)||0,
-    ovp:document.getElementById('ed-ovp').checked,
-    promo:Number(document.getElementById('ed-promo').value)||0,
-  };
+  const tmp=lerPreco('ed');
   const c=calcProduto(tmp);
   document.getElementById('ed-preview').innerHTML=`
-    <div class="mc"><div class="ml">Preço c/promo</div><div class="mv">${brl(c.precoPromo)}</div></div>
-    <div class="mc"><div class="ml">Preço de venda</div><div class="mv">${brl(c.preco)}</div></div>
+    <div class="mc"><div class="ml">Mín. c/ reposição</div><div class="mv">${brl(c.precoPromo)}</div></div>
+    <div class="mc"><div class="ml">Preço normal</div><div class="mv">${brl(c.preco)}</div></div>
     <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(--color-text-success)">${brl(c.lucroGarantido)}</div></div>`;
 }
 async function salvarEdicao(){
@@ -1204,13 +1304,9 @@ async function salvarEdicao(){
   p.nome=document.getElementById('ed-nome').value;
   p.categoria=document.getElementById('ed-categoria').value;
   p.qtd=Number(document.getElementById('ed-qtd').value)||0;
-  p.custo=Number(document.getElementById('ed-custo').value)||0;
-  p.gastos=Number(document.getElementById('ed-gastos').value)||0;
-  p.insumo=Number(document.getElementById('ed-insumo').value)||0;
-  p.ovm=document.getElementById('ed-ovm').checked;
-  p.marg=p.ovm?Number(document.getElementById('ed-marg').value)||0:padMarg;
-  p.ovp=document.getElementById('ed-ovp').checked;
-  p.promo=p.ovp?Number(document.getElementById('ed-promo').value)||0:padPromo;
+  const v=lerPreco('ed');
+  p.custo=v.custo;p.gastos=v.gastos;p.insumo=v.insumo;
+  p.ovm=v.ovm;p.marg=v.marg;p.ovp=v.ovp;p.promo=v.promo;
   fecharModal();renderEstoque();
   if(conectado){
     const r=await gsPost({action:'updateProduto',produto:{cod:p.cod,nome:p.nome,categoria:p.categoria,qtd:p.qtd,custo:p.custo,gastos:p.gastos,insumo:p.insumo,marg:p.marg,promo:p.promo}});
@@ -1220,31 +1316,21 @@ async function salvarEdicao(){
 
 // ================= ENTRADA: NOVO PRODUTO =================
 function previewNovo(){
-  document.getElementById('np-marg').disabled=!document.getElementById('np-ovm').checked;
-  document.getElementById('np-promo').disabled=!document.getElementById('np-ovp').checked;
-  const tmp={
-    custo:Number(document.getElementById('np-custo').value)||0,
-    gastos:Number(document.getElementById('np-gastos').value)||0,
-    insumo:Number(document.getElementById('np-insumo').value)||0,
-    ovm:document.getElementById('np-ovm').checked,
-    marg:Number(document.getElementById('np-marg').value)||0,
-    ovp:document.getElementById('np-ovp').checked,
-    promo:Number(document.getElementById('np-promo').value)||0,
-  };
+  const tmp=lerPreco('np');
+  const cc=document.getElementById('np-cod');if(cc&&!cc.value)cc.placeholder=proximoCodigo();
   const c=calcProduto(tmp);
   document.getElementById('np-preview').innerHTML=`
-    <div class="mc"><div class="ml">Preço c/promo</div><div class="mv">${brl(c.precoPromo)}</div></div>
-    <div class="mc"><div class="ml">Preço de venda</div><div class="mv">${brl(c.preco)}</div></div>
+    <div class="mc"><div class="ml">Mín. c/ reposição</div><div class="mv">${brl(c.precoPromo)}</div></div>
+    <div class="mc"><div class="ml">Preço normal</div><div class="mv">${brl(c.preco)}</div></div>
     <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(--color-text-success)">${brl(c.lucroGarantido)}</div></div>`;
 }
 async function salvarNovoProduto(){
   const nome=document.getElementById('np-nome').value.trim();
-  const cod=document.getElementById('np-cod').value.trim()||('P0'+(produtos.length+10));
+  const cod=document.getElementById('np-cod').value.trim()||proximoCodigo();
+  if(produtos.some(p=>p.cod===cod)){toast('t-dash',`O código ${cod} já existe. Use outro ou deixe em branco.`,false);goTab('dashboard');return;}
   if(!nome){toast('t-dash','Informe o nome do produto.',false);goTab('dashboard');return;}
-  const ovm=document.getElementById('np-ovm').checked;
-  const ovp=document.getElementById('np-ovp').checked;
-  const marg=ovm?Number(document.getElementById('np-marg').value)||0:padMarg;
-  const promo=ovp?Number(document.getElementById('np-promo').value)||0:padPromo;
+  const v=lerPreco('np');
+  const marg=v.marg, promo=v.promo;
   const novo={
     nome,cod,forn:document.getElementById('np-forn').value,
     categoria:document.getElementById('np-categoria').value,
@@ -1260,6 +1346,7 @@ async function salvarNovoProduto(){
   document.getElementById('np-custo').value=0;document.getElementById('np-gastos').value=0;
   document.getElementById('np-insumo').value='8.5';
   document.getElementById('np-ovm').checked=false;document.getElementById('np-ovp').checked=false;
+  document.getElementById('np-aurora').checked=true;
   previewNovo();
   document.getElementById('cat-filter-estoque').innerHTML='';
   document.getElementById('cat-filter-vendidos').innerHTML='';
@@ -1334,7 +1421,7 @@ function previewVenda(){
   document.getElementById('nv-estoque-info').innerHTML=`
     <b>${p.nome}</b> <span class="badge">${p.categoria}</span><br>Estoque atual: <b>${p.qtd}</b> unid.<br>
     Preço normal: <b>${brl(c.preco)}</b> · Com desconto (${pct(c.promo)}): <b>${brl(c.precoPromo)}</b><br>
-    ${campDescFor(p)?`${campanha.nome||'Campanha'} (${pct(campDescFor(p))}): <b>${brl(c.preco*(1-campDescFor(p)/100))}</b><br>`:''}
+    ${campDescFor(p)?`${promoNomeFor(p)} (${pct(campDescFor(p))}): <b>${brl(c.preco*(1-campDescFor(p)/100))}</b><br>`:''}
     Valor mínimo (lucro zero): <b>${brl(c.base)}</b> por unidade${qtd>1?` · <b>${brl(c.base*qtd)}</b> no total`:''}<br>
     Desconto máximo sobre ${brl(preco)}: <b>${pct(descMax(preco,c.base))}</b><br>
     ${lucro<0?'<span style="color:var(--color-text-danger)">⚠ Abaixo do valor mínimo: esta venda dá prejuízo.</span><br>':''}
