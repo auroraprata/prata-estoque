@@ -328,17 +328,19 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
             <option value="8.5" selected>Padrão (R$ 8,50)</option>
           </select>
         </div>
-        <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin:2px 0 10px"><input type="checkbox" id="np-aurora" checked onchange="previewNovo()" style="margin-top:2px"><span><b>Usar regra Aurora</b><br><span style="color:var(--color-text-secondary)">Calcula sozinho: lucro = custo (dinheiro da reposição) + 20% de segurança. Desmarque para pôr a margem na mão.</span></span></label>
+        <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin:2px 0 10px"><input type="checkbox" id="np-aurora" checked onchange="limparPrecoManual('np');previewNovo()" style="margin-top:2px"><span><b>Usar regra Aurora</b><br><span style="color:var(--color-text-secondary)">Calcula sozinho: lucro = custo (dinheiro da reposição) + 20% de segurança. Desmarque para pôr a margem na mão.</span></span></label>
         <div class="grid2">
           <div class="field">
             <label><input type="checkbox" id="np-ovm" onchange="previewNovo()"> Margem (%)</label>
-            <input id="np-marg" type="number" step="0.01" value="50" disabled oninput="previewNovo()">
+            <input id="np-marg" type="number" step="0.01" value="50" disabled oninput="limparPrecoManual('np');previewNovo()">
           </div>
           <div class="field">
             <label><input type="checkbox" id="np-ovp" onchange="previewNovo()"> % segurança</label>
             <input id="np-promo" type="number" step="0.01" value="0" disabled oninput="previewNovo()">
           </div>
         </div>
+        <div class="field"><label>Preço normal (R$) — opcional: digite para definir o preço na mão; a margem se ajusta sozinha</label>
+          <input id="np-preco" type="number" step="0.01" min="0" oninput="precoManual('np')"></div>
         <button class="btn btn-primary" onclick="salvarNovoProduto()"><span aria-hidden="true">💾</span> Salvar produto</button>
       </div>
       <div>
@@ -515,11 +517,13 @@ input.meta-input{width:100px;padding:5px 7px;border:1px solid var(--color-border
         <option value="8.5">Padrão (R$ 8,50)</option>
       </select>
     </div>
-    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin:2px 0 10px"><input type="checkbox" id="ed-aurora" onchange="previewEdit()" style="margin-top:2px"><span><b>Usar regra Aurora</b><br><span style="color:var(--color-text-secondary)">Lucro = custo (reposição) + 20% de segurança. Recalcula sozinho se mudar custo ou insumo.</span></span></label>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;margin:2px 0 10px"><input type="checkbox" id="ed-aurora" onchange="limparPrecoManual('ed');previewEdit()" style="margin-top:2px"><span><b>Usar regra Aurora</b><br><span style="color:var(--color-text-secondary)">Lucro = custo (reposição) + 20% de segurança. Recalcula sozinho se mudar custo ou insumo.</span></span></label>
     <div class="grid2">
-      <div class="field"><label><input type="checkbox" id="ed-ovm" onchange="previewEdit()"> Margem (%)</label><input id="ed-marg" type="number" step="0.01" oninput="previewEdit()"></div>
+      <div class="field"><label><input type="checkbox" id="ed-ovm" onchange="previewEdit()"> Margem (%)</label><input id="ed-marg" type="number" step="0.01" oninput="limparPrecoManual('ed');previewEdit()"></div>
       <div class="field"><label><input type="checkbox" id="ed-ovp" onchange="previewEdit()"> % segurança</label><input id="ed-promo" type="number" step="0.01" oninput="previewEdit()"></div>
     </div>
+    <div class="field"><label>Preço normal (R$) — digite para definir o preço na mão; a margem se ajusta sozinha</label>
+      <input id="ed-preco" type="number" step="0.01" min="0" oninput="precoManual('ed')"></div>
     <div class="metrics3" id="ed-preview" style="margin-bottom:10px"></div>
     <button class="btn btn-primary" onclick="salvarEdicao()"><span aria-hidden="true">💾</span> Salvar alterações</button>
   </div>
@@ -1339,6 +1343,7 @@ function abrirEdicao(cod){
   const pOrig=p.ovp&&p.promo!=null?Number(p.promo):padPromo;
   const ep=document.getElementById('ed-promo');ep.value=Number(pOrig.toFixed(2));ep.dataset.orig=pOrig;
   document.getElementById('ed-aurora').checked=segueAurora(p);
+  limparPrecoManual('ed');
   previewEdit();
   previewEdit();
   document.getElementById('modal-edit').classList.add('on');
@@ -1346,6 +1351,25 @@ function abrirEdicao(cod){
 function fecharModal(){document.getElementById('modal-edit').classList.remove('on');}
 // lê margem/segurança do formulário (pref = 'ed' ou 'np'), respeitando a regra Aurora
 function valorExato(el){const v=Number(el.value)||0;const o=el.dataset.orig;return(o!==undefined&&o!==''&&Math.abs(Number(Number(o).toFixed(2))-v)<1e-9)?Number(o):v;}
+function avisoPreco(pref,c){
+  const e=document.getElementById(pref+'-preco');if(!e)return;
+  if(e.value==='')e.placeholder=Number(c.preco.toFixed(2));
+  let w=document.getElementById(pref+'-preco-aviso');
+  if(!w){w=document.createElement('div');w.id=pref+'-preco-aviso';w.style.cssText='font-size:12px;margin-top:4px';e.after(w);}
+  w.innerHTML=e.value===''?'<span style="color:var(--color-text-secondary)">Vazio = preço calculado pela margem.</span>'
+    :c.lucroGarantido<0?'<span style="color:var(--color-text-danger)">⚠ Preço baixo demais: dando os % de segurança, fica abaixo de custo + insumo (prejuízo).</span>'
+    :c.lucroGarantido+0.005<(Number(document.getElementById(pref+'-custo').value)||0)?'<span style="color:#b26b00">⚠ Esse preço não paga a reposição inteira da peça (lucro garantido menor que o custo).</span>'
+    :'<span style="color:var(--color-text-success)">Preço definido na mão. A margem foi ajustada para dar esse preço.</span>';
+}
+function precoManual(pref){
+  const v=document.getElementById(pref+'-preco').value;
+  if(v!==''){
+    const a=document.getElementById(pref+'-aurora');
+    if(a.checked){a.checked=false;document.getElementById(pref+'-ovp').checked=true;} // mantém os 20% de segurança
+  }
+  pref==='np'?previewNovo():previewEdit();
+}
+function limparPrecoManual(pref){const e=document.getElementById(pref+'-preco');if(e)e.value='';}
 function lerPreco(pref){
   const custo=Number(document.getElementById(pref+'-custo').value)||0;
   const gastos=Number(document.getElementById(pref+'-gastos').value)||0;
@@ -1361,6 +1385,15 @@ function lerPreco(pref){
     return{custo,gastos,insumo,ovm:true,marg:m,ovp:true,promo:SEG_AURORA};
   }
   ovmEl.disabled=false;ovpEl.disabled=false;
+  const prEl=document.getElementById(pref+'-preco');
+  if(prEl&&prEl.value!==''){ // preço digitado na mão: calcula a margem que dá esse preço
+    const preco=Number(prEl.value)||0,base=custo+gastos+insumo;
+    const promo=ovpEl.checked?valorExato(pEl):padPromo;
+    const m=base>0?(preco*(1-promo/100)/base-1)*100:0;
+    ovmEl.checked=true;mEl.disabled=false;pEl.disabled=!ovpEl.checked;
+    mEl.value=Number(m.toFixed(2));mEl.dataset.orig=m;
+    return{custo,gastos,insumo,ovm:true,marg:m,ovp:ovpEl.checked,promo};
+  }
   mEl.disabled=!ovmEl.checked;pEl.disabled=!ovpEl.checked;
   return{custo,gastos,insumo,ovm:ovmEl.checked,marg:ovmEl.checked?valorExato(mEl):padMarg,ovp:ovpEl.checked,promo:ovpEl.checked?valorExato(pEl):padPromo};
 }
@@ -1370,7 +1403,8 @@ function previewEdit(){
   document.getElementById('ed-preview').innerHTML=`
     <div class="mc"><div class="ml">Mín. c/ reposição</div><div class="mv">${brl(c.precoPromo)}</div></div>
     <div class="mc"><div class="ml">Preço normal</div><div class="mv">${brl(c.preco)}</div></div>
-    <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(--color-text-success)">${brl(c.lucroGarantido)}</div></div>`;
+    <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(${c.lucroGarantido<0?'--color-text-danger':'--color-text-success'})">${brlS(c.lucroGarantido)}</div></div>`;
+  avisoPreco('ed',c);
 }
 async function salvarEdicao(){
   const cod=document.getElementById('ed-cod').value;
@@ -1396,7 +1430,8 @@ function previewNovo(){
   document.getElementById('np-preview').innerHTML=`
     <div class="mc"><div class="ml">Mín. c/ reposição</div><div class="mv">${brl(c.precoPromo)}</div></div>
     <div class="mc"><div class="ml">Preço normal</div><div class="mv">${brl(c.preco)}</div></div>
-    <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(--color-text-success)">${brl(c.lucroGarantido)}</div></div>`;
+    <div class="mc"><div class="ml">Lucro garantido</div><div class="mv" style="color:var(${c.lucroGarantido<0?'--color-text-danger':'--color-text-success'})">${brlS(c.lucroGarantido)}</div></div>`;
+  avisoPreco('np',c);
 }
 async function salvarNovoProduto(){
   const nome=document.getElementById('np-nome').value.trim();
@@ -1420,7 +1455,7 @@ async function salvarNovoProduto(){
   document.getElementById('np-custo').value=0;document.getElementById('np-gastos').value=0;
   document.getElementById('np-insumo').value='8.5';
   document.getElementById('np-ovm').checked=false;document.getElementById('np-ovp').checked=false;
-  document.getElementById('np-aurora').checked=true;
+  document.getElementById('np-aurora').checked=true;limparPrecoManual('np');
   previewNovo();
   document.getElementById('cat-filter-estoque').innerHTML='';
   document.getElementById('cat-filter-vendidos').innerHTML='';
